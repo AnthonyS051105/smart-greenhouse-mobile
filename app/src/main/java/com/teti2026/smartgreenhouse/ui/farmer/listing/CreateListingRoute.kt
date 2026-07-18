@@ -13,6 +13,11 @@ import androidx.compose.runtime.setValue
  * Route "Buat Listing - Petani": state di-hoist di sini (pola sama seperti
  * [com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute]), screen tetap stateless.
  *
+ * [initialFormState] memungkinkan caller mengisi form dari data lain — dipakai saat masuk dari
+ * tombol "Buat Listing dari Data Ini" di Detail Analisis Citra (lihat `NavGraph.kt`), yang
+ * membawa foto, deskripsi (catatan AI), & skor kesehatan citra terpilih. Default `null` berarti
+ * masuk dari tombol "+" navbar biasa (pola lama, data sampel statis).
+ *
  * TODO (MOB-T13): [productName] & [CreateListingFormState.healthScore] saat ini data sampel
  * dari plot aktif — ganti dengan hasil `POST /listings/auto-fill-health-score`
  * (`docs/data-contracts.md §4.6`) begitu BackendRepository/plot aktif petani dikerjakan.
@@ -23,11 +28,12 @@ import androidx.compose.runtime.setValue
 @Composable
 fun CreateListingRoute(
     onBackClick: () -> Unit,
-    onPublishClick: () -> Unit
+    onPublishClick: () -> Unit,
+    initialFormState: CreateListingFormState? = null
 ) {
     var formState by remember {
         mutableStateOf(
-            CreateListingFormState(
+            initialFormState ?: CreateListingFormState(
                 productName = "Cabai Rawit Merah",
                 healthScore = 87.0
             )

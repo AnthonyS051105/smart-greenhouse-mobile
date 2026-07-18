@@ -1,5 +1,6 @@
 package com.teti2026.smartgreenhouse.ui.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
@@ -23,6 +24,9 @@ import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute
+import com.teti2026.smartgreenhouse.ui.farmer.history.ImageHistoryRoute
+import com.teti2026.smartgreenhouse.ui.farmer.history.sampleImageAnalysisDetails
+import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingFormState
 import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupDataRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupLocationRoute
@@ -30,7 +34,8 @@ import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupPairingRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.rememberGreenhouseSetupStateHolder
 
 private val BUYER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP, Routes.BUYER_ORDERS)
-private val FARMER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.FARMER_DASHBOARD, Routes.FARMER_PROFILE)
+private val FARMER_BOTTOM_NAV_DESTINATIONS =
+    setOf(Routes.FARMER_DASHBOARD, Routes.FARMER_IMAGE_HISTORY, Routes.FARMER_PROFILE)
 
 /**
  * Graf navigasi utama, lihat `docs/SDD.md §6`. Saat ini login → Dashboard App Petani atau
@@ -55,13 +60,13 @@ fun GreenhouseNavGraph(
         // TODO: tab Profil belum punya destination.
     }
 
-    // Sama seperti [onBuyerBottomNavigate], untuk tab bawah App Petani. Dashboard & Profil
-    // adalah tab persisten (pakai popUpTo+saveState/restoreState) — tab Riwayat/Pesan belum
+    // Sama seperti [onBuyerBottomNavigate], untuk tab bawah App Petani. Dashboard, Riwayat &
+    // Profil adalah tab persisten (pakai popUpTo+saveState/restoreState) — tab Pesan belum
     // punya destination. "Tambah" (FARMER_CREATE_LISTING) BUKAN tab persisten (form
     // transaksional dengan tombol back sendiri, sesuai desain Stitch "Buat Listing"), jadi
     // di-push biasa lewat navigate() agar kembali dengan back-stack normal, bukan tab-switch.
     val onFarmerBottomNavigate: (String) -> Unit = { route ->
-        if (route == Routes.FARMER_CREATE_LISTING) {
+        if (route == Routes.FARMER_CREATE_LISTING_BASE) {
             navController.navigate(route)
         } else if (route in FARMER_BOTTOM_NAV_DESTINATIONS) {
             navController.navigate(route) {
@@ -70,7 +75,7 @@ fun GreenhouseNavGraph(
                 restoreState = true
             }
         }
-        // TODO: tab Riwayat/Pesan belum punya destination.
+        // TODO: tab Pesan belum punya destination.
     }
 
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
@@ -105,7 +110,27 @@ fun GreenhouseNavGraph(
         }
         composable(Routes.FARMER_DASHBOARD) {
             DashboardFarmerRoute(
-                onImageHistoryClick = { /* TODO: navigasi ke Riwayat Citra saat screen dibuat */ },
+                onImageHistoryClick = { onFarmerBottomNavigate(Routes.FARMER_IMAGE_HISTORY) },
+                onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        // Detail Analisis Citra BUKAN destination NavHost terpisah — dirender sebagai
+        // `ModalBottomSheet` overlay DI ATAS composable ini (state `selectedImageId` di-hoist di
+        // dalam `ImageHistoryRoute`), supaya grid tetap ada di composition sebagai layar di
+        // belakang sheet (scrim menampilkan konten Riwayat asli, bukan layar kosong). Pendekatan
+        // awal (destination NavHost terpisah via `dialog()`) menyebabkan window Dialog kosong
+        // bertumpuk, karena `ModalBottomSheet` M3 sudah membuat `Dialog`-nya sendiri.
+        composable(Routes.FARMER_IMAGE_HISTORY) {
+            ImageHistoryRoute(
+                onCreateListingFromImage = { selectedDetail ->
+                    // Transfer data (gambar, deskripsi, skor kesehatan) ke Buat Listing lewat
+                    // query param [prefillImageId] pada route — [CreateListingFormState]
+                    // sungguhan dibangun di composable Routes.FARMER_CREATE_LISTING di bawah
+                    // (pola sama seperti resolve listingId/farmId di destination Pembeli).
+                    navController.navigate(Routes.farmerCreateListingFromImage(selectedDetail.id))
+                },
+                onCreateListingClick = { navController.navigate(Routes.FARMER_CREATE_LISTING_BASE) },
+                onBackClick = { navController.popBackStack() },
                 onBottomNavigate = onFarmerBottomNavigate
             )
         }
@@ -164,7 +189,30 @@ fun GreenhouseNavGraph(
                 }
             )
         }
-        composable(Routes.FARMER_CREATE_LISTING) {
+        composable(
+            route = Routes.FARMER_CREATE_LISTING,
+            arguments = listOf(
+                navArgument("prefillImageId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            // [prefillImageId] terisi hanya saat masuk dari tombol "Buat Listing dari Data Ini"
+            // di Detail Analisis Citra (lihat Routes.farmerCreateListingFromImage) — `null` berarti
+            // masuk dari tombol "+" navbar biasa, form pakai data sampel default seperti semula.
+            val prefillImageId = backStackEntry.arguments?.getString("prefillImageId")
+            val prefillDetail = prefillImageId?.let { sampleImageAnalysisDetails[it] }
+            val initialFormState = prefillDetail?.let { detail ->
+                CreateListingFormState(
+                    productName = detail.productName,
+                    healthScore = detail.healthScore,
+                    photoUris = listOf(Uri.parse(detail.imageUrl)),
+                    description = detail.aiNote
+                )
+            }
+
             CreateListingRoute(
                 onBackClick = { navController.popBackStack() },
                 onPublishClick = {
@@ -172,7 +220,8 @@ fun GreenhouseNavGraph(
                     // (MOB-T13) begitu form & upload Cloudinary sungguhan dikerjakan. Untuk
                     // sekarang langsung kembali ke Dashboard setelah "Publikasikan".
                     navController.popBackStack()
-                }
+                },
+                initialFormState = initialFormState
             )
         }
         composable(Routes.BUYER_MARKETPLACE) {

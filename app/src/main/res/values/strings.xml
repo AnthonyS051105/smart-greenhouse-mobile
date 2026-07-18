@@ -220,4 +220,23 @@
     <string name="create_listing_preorder_title">Tersedia untuk Pre-order</string>
     <string name="create_listing_preorder_subtitle">Izinkan pembeli memesan sebelum panen</string>
     <string name="create_listing_publish_button">Publikasikan</string>
+
+    <!-- Riwayat Citra - Petani -->
+    <string name="image_history_top_bar_title">Riwayat Citra &amp; Skor AI</string>
+    <string name="image_history_back_content_description">Kembali</string>
+    <string name="image_history_filter_all">Semua</string>
+    <string name="image_history_filter_healthy">Sehat</string>
+    <string name="image_history_filter_sick">Sakit</string>
+    <string name="image_history_filter_this_week">Minggu Ini</string>
+    <string name="image_history_category_sick">Sakit</string>
+    <string name="image_history_fab_create_listing">Buat Listing</string>
+
+    <!-- Detail Analisis Citra - AgriSmart -->
+    <string name="image_analysis_category_healthy">Sehat</string>
+    <string name="image_analysis_score_label">Skor: %1$d/100</string>
+    <string name="image_analysis_ai_note_title">Catatan Analisis AI</string>
+    <string name="image_analysis_location_label">Lokasi Deteksi</string>
+    <string name="image_analysis_device_label">Perangkat</string>
+    <string name="image_analysis_create_listing_button">Buat Listing dari Data Ini</string>
+    <string name="image_analysis_close_button">Tutup</string>
 </resources>

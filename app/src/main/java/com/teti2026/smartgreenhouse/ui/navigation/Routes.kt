@@ -4,8 +4,9 @@ package com.teti2026.smartgreenhouse.ui.navigation
  * Route id NavHost, sesuai peta navigasi di `docs/SDD.md §6`.
  * LOGIN, BUYER_MARKETPLACE, BUYER_MAP, BUYER_DETAIL, BUYER_CHAT, BUYER_CHECKOUT,
  * BUYER_ORDER_SUCCESS, BUYER_ORDERS, BUYER_REVIEW, FARMER_DASHBOARD, FARMER_PROFILE,
- * FARMER_SETUP_GREENHOUSE_* & FARMER_CREATE_LISTING yang punya destination — sisanya menyusul
- * per screen dibuat.
+ * FARMER_SETUP_GREENHOUSE_*, FARMER_CREATE_LISTING & FARMER_IMAGE_HISTORY yang punya destination
+ * — sisanya menyusul per screen dibuat. Detail Analisis Citra BUKAN destination NavHost (lihat
+ * `ImageHistoryRoute` — dirender sebagai overlay `ModalBottomSheet` di atas Riwayat Citra).
  */
 object Routes {
     const val LOGIN = "login"
@@ -21,8 +22,15 @@ object Routes {
     const val FARMER_SETUP_GREENHOUSE_LOCATION = "farmer/setup-greenhouse/location"
     const val FARMER_SETUP_GREENHOUSE_PAIRING = "farmer/setup-greenhouse/pairing"
 
-    // Tujuan tombol "+" navbar Petani — form buat listing hasil panen.
-    const val FARMER_CREATE_LISTING = "farmer/listing/create"
+    // Tujuan tombol "+" navbar Petani — form buat listing hasil panen. [prefillImageId] opsional
+    // (query param, default "none") dipakai saat masuk dari tombol "Buat Listing dari Data Ini"
+    // di Detail Analisis Citra, membawa id citra terpilih supaya form bisa di-prefill.
+    const val FARMER_CREATE_LISTING = "farmer/listing/create?prefillImageId={prefillImageId}"
+    const val FARMER_CREATE_LISTING_BASE = "farmer/listing/create"
+
+    // Tujuan tab "Riwayat" navbar Petani — grid citra & skor AI. Detail satu citra ditampilkan
+    // sebagai ModalBottomSheet overlay di composable yang sama (bukan route terpisah).
+    const val FARMER_IMAGE_HISTORY = "farmer/image-history"
 
     // Pembeli
     const val BUYER_MARKETPLACE = "buyer/marketplace"
@@ -48,4 +56,7 @@ object Routes {
 
     /** Bangun route [BUYER_REVIEW] konkret untuk memberi ulasan pesanan tertentu. */
     fun buyerReview(orderId: String) = "buyer/review/$orderId"
+
+    /** Bangun route [FARMER_CREATE_LISTING] dengan citra terpilih untuk prefill form. */
+    fun farmerCreateListingFromImage(imageId: String) = "$FARMER_CREATE_LISTING_BASE?prefillImageId=$imageId"
 }

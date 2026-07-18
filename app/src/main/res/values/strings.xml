@@ -14,4 +14,9 @@
     <string name="auth_login_button">Masuk</string>
     <string name="auth_register_prompt">Belum punya akun?</string>
     <string name="auth_register_cta">Daftar Akun Baru</string>
+
+    <!-- Marketplace - Pembeli -->
+    <string name="marketplace_notifications_content_description">Notifikasi</string>
+    <string name="marketplace_search_placeholder">Cari hasil panen...</string>
+    <string name="marketplace_filter_button_content_description">Filter</string>
 </resources>

@@ -19,4 +19,18 @@
     <string name="marketplace_notifications_content_description">Notifikasi</string>
     <string name="marketplace_search_placeholder">Cari hasil panen...</string>
     <string name="marketplace_filter_button_content_description">Filter</string>
+
+    <!-- Peta Marketplace - Pembeli -->
+    <string name="map_search_placeholder">Cari lokasi atau nama kebun...</string>
+    <string name="map_filter_button_content_description">Filter</string>
+    <string name="map_quick_filter_vegetable">Sayuran</string>
+    <string name="map_quick_filter_fruit">Buah</string>
+    <string name="map_quick_filter_nearest">Terdekat</string>
+    <string name="map_my_location_content_description">Pusatkan ke lokasi saya</string>
+    <string name="map_marker_content_description">Lokasi %1$s</string>
+    <string name="map_bottom_sheet_title">Kebun Terdekat</string>
+    <string name="map_bottom_sheet_subtitle">Menampilkan %1$d kebun di sekitar Anda</string>
+    <string name="map_see_all_button">Lihat Semua Produk</string>
+    <string name="map_rating_content_description">Rating %1$s</string>
+    <string name="map_farm_image_placeholder_content_description">Belum ada foto kebun</string>
 </resources>

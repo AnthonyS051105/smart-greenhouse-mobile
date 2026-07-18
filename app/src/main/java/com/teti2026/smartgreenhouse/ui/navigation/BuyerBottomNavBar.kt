@@ -31,12 +31,12 @@ import com.teti2026.smartgreenhouse.ui.theme.MintTint
 
 /**
  * Tab bawah App Pembeli. Sesuai `docs/UIUX-Flow.md §2`: Marketplace | Peta | Pesanan | Profil.
- * Hanya [Routes.BUYER_MARKETPLACE] yang punya destination saat ini — tab lain tampil
- * (sesuai desain Stitch) tapi belum menavigasi ke mana pun (lihat TODO di pemanggil).
+ * [Routes.BUYER_MARKETPLACE] & [Routes.BUYER_MAP] sudah punya destination — tab Pesanan/Profil
+ * tampil (sesuai desain Stitch) tapi belum menavigasi ke mana pun (lihat TODO di NavGraph.kt).
  */
 enum class BuyerBottomNavItem(val route: String, val label: String, val filledIcon: ImageVector, val outlinedIcon: ImageVector) {
     MARKETPLACE(Routes.BUYER_MARKETPLACE, "Pasar", Icons.Filled.Storefront, Icons.Outlined.Storefront),
-    MAP("buyer/map", "Peta", Icons.Filled.Map, Icons.Outlined.Map),
+    MAP(Routes.BUYER_MAP, "Peta", Icons.Filled.Map, Icons.Outlined.Map),
     ORDERS("buyer/orders", "Pesanan", Icons.Filled.ShoppingBag, Icons.Outlined.ShoppingBag),
     PROFILE("buyer/profile", "Profil", Icons.Filled.Person, Icons.Outlined.Person)
 }

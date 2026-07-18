@@ -23,6 +23,7 @@ import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute
+import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupDataRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupLocationRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupPairingRoute
@@ -54,17 +55,22 @@ fun GreenhouseNavGraph(
         // TODO: tab Profil belum punya destination.
     }
 
-    // Sama seperti [onBuyerBottomNavigate], untuk tab bawah App Petani. Hanya Dashboard yang
-    // sudah punya destination — tab Riwayat/Tambah/Pesan/Profil menyusul saat screen dibuat.
+    // Sama seperti [onBuyerBottomNavigate], untuk tab bawah App Petani. Dashboard & Profil
+    // adalah tab persisten (pakai popUpTo+saveState/restoreState) — tab Riwayat/Pesan belum
+    // punya destination. "Tambah" (FARMER_CREATE_LISTING) BUKAN tab persisten (form
+    // transaksional dengan tombol back sendiri, sesuai desain Stitch "Buat Listing"), jadi
+    // di-push biasa lewat navigate() agar kembali dengan back-stack normal, bukan tab-switch.
     val onFarmerBottomNavigate: (String) -> Unit = { route ->
-        if (route in FARMER_BOTTOM_NAV_DESTINATIONS) {
+        if (route == Routes.FARMER_CREATE_LISTING) {
+            navController.navigate(route)
+        } else if (route in FARMER_BOTTOM_NAV_DESTINATIONS) {
             navController.navigate(route) {
                 popUpTo(Routes.FARMER_DASHBOARD) { saveState = true }
                 launchSingleTop = true
                 restoreState = true
             }
         }
-        // TODO: tab Riwayat/Tambah/Pesan/Profil belum punya destination.
+        // TODO: tab Riwayat/Pesan belum punya destination.
     }
 
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
@@ -155,6 +161,17 @@ fun GreenhouseNavGraph(
                     navController.navigate(Routes.FARMER_DASHBOARD) {
                         popUpTo(Routes.FARMER_SETUP_GREENHOUSE_DATA) { inclusive = true }
                     }
+                }
+            )
+        }
+        composable(Routes.FARMER_CREATE_LISTING) {
+            CreateListingRoute(
+                onBackClick = { navController.popBackStack() },
+                onPublishClick = {
+                    // TODO: simpan Listing ke Firestore via FirestoreRepository.createListing
+                    // (MOB-T13) begitu form & upload Cloudinary sungguhan dikerjakan. Untuk
+                    // sekarang langsung kembali ke Dashboard setelah "Publikasikan".
+                    navController.popBackStack()
                 }
             )
         }

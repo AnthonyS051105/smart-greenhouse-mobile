@@ -3,8 +3,9 @@ package com.teti2026.smartgreenhouse.ui.navigation
 /**
  * Route id NavHost, sesuai peta navigasi di `docs/SDD.md §6`.
  * LOGIN, BUYER_MARKETPLACE, BUYER_MAP, BUYER_DETAIL, BUYER_CHAT, BUYER_CHECKOUT,
- * BUYER_ORDER_SUCCESS, BUYER_ORDERS, BUYER_REVIEW & FARMER_DASHBOARD yang punya destination —
- * sisanya menyusul per screen dibuat.
+ * BUYER_ORDER_SUCCESS, BUYER_ORDERS, BUYER_REVIEW, FARMER_DASHBOARD, FARMER_PROFILE,
+ * FARMER_SETUP_GREENHOUSE_* & FARMER_CREATE_LISTING yang punya destination — sisanya menyusul
+ * per screen dibuat.
  */
 object Routes {
     const val LOGIN = "login"
@@ -19,6 +20,9 @@ object Routes {
     const val FARMER_SETUP_GREENHOUSE_DATA = "farmer/setup-greenhouse/data"
     const val FARMER_SETUP_GREENHOUSE_LOCATION = "farmer/setup-greenhouse/location"
     const val FARMER_SETUP_GREENHOUSE_PAIRING = "farmer/setup-greenhouse/pairing"
+
+    // Tujuan tombol "+" navbar Petani — form buat listing hasil panen.
+    const val FARMER_CREATE_LISTING = "farmer/listing/create"
 
     // Pembeli
     const val BUYER_MARKETPLACE = "buyer/marketplace"

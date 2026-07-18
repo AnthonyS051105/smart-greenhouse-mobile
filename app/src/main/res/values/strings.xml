@@ -196,4 +196,28 @@
     <string name="profile_farmer_menu_notifications">Notifikasi</string>
     <string name="profile_farmer_menu_help">Bantuan</string>
     <string name="profile_farmer_menu_logout">Keluar</string>
+
+    <!-- Health Score Badge (dipakai lintas screen: Buat Listing, dst) -->
+    <string name="health_score_label_good">Baik</string>
+    <string name="health_score_label_medium">Sedang</string>
+    <string name="health_score_label_low">Perlu Perhatian</string>
+
+    <!-- Buat Listing - Petani -->
+    <string name="create_listing_top_bar_title">Buat Listing</string>
+    <string name="create_listing_back_content_description">Kembali</string>
+    <string name="create_listing_health_score_locked_hint">Diisi otomatis oleh AI</string>
+    <string name="create_listing_health_score_title">Skor Kesehatan Tanaman</string>
+    <string name="create_listing_photo_section_title">Foto Produk</string>
+    <string name="create_listing_add_photo_label">Tambah</string>
+    <string name="create_listing_remove_photo_content_description">Hapus foto</string>
+    <string name="create_listing_detail_section_title">Detail Produk</string>
+    <string name="create_listing_product_name_label">Nama Produk</string>
+    <string name="create_listing_price_label">Harga per kg</string>
+    <string name="create_listing_price_prefix">Rp</string>
+    <string name="create_listing_quantity_label">Jumlah tersedia (kg)</string>
+    <string name="create_listing_description_label">Deskripsi Produk</string>
+    <string name="create_listing_description_placeholder">Masukkan deskripsi detail mengenai produk Anda…</string>
+    <string name="create_listing_preorder_title">Tersedia untuk Pre-order</string>
+    <string name="create_listing_preorder_subtitle">Izinkan pembeli memesan sebelum panen</string>
+    <string name="create_listing_publish_button">Publikasikan</string>
 </resources>

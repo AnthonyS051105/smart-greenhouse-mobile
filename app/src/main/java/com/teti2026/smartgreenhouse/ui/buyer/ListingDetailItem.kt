@@ -11,6 +11,10 @@ import com.teti2026.smartgreenhouse.ui.components.SensorChartPoint
  * Catatan: [imageUrls] (multi-foto), [description], [minOrderLabel] belum punya field resmi di
  * `data-contracts.md` — akan didefinisikan bersama tim saat MOB-T13 (Buat Listing, sisi Petani)
  * dikerjakan. Field ini bersifat presentasional sementara, bukan keputusan skema final.
+ *
+ * [pricePerKg]/[quantityAvailableKg]/[minOrderKg] adalah versi angka mentah dari `price_per_kg`/
+ * `quantity_kg` (`data-contracts.md §3.7`) — dipakai untuk hitung subtotal di Checkout (MOB-T21),
+ * berdampingan dengan versi *Label yang sudah diformat untuk tampilan.
  */
 data class ListingDetailItem(
     val id: String,
@@ -20,9 +24,13 @@ data class ListingDetailItem(
     val imageUrls: List<String>,
     val imageContentDescription: String,
     val healthScore: Double,
+    val pricePerKg: Long,
     val pricePerKgLabel: String,
+    val quantityAvailableKg: Double,
     val quantityAvailableLabel: String,
+    val minOrderKg: Double,
     val minOrderLabel: String,
+    val unitLabel: String,
     val description: String,
     val sensorHistoryStatusLabel: String,
     val sensorHistory: List<SensorChartPoint>,
@@ -51,9 +59,13 @@ val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
         ),
         imageContentDescription = "Tumpukan cabai rawit merah segar",
         healthScore = 88.5,
+        pricePerKg = 25_000L,
         pricePerKgLabel = "Rp 25.000",
+        quantityAvailableKg = 500.0,
         quantityAvailableLabel = "500 Kg",
+        minOrderKg = 10.0,
         minOrderLabel = "10 Kg",
+        unitLabel = "Kg",
         description = "Cabai rawit merah kualitas super, ditanam dengan metode pertanian presisi " +
             "berbasis monitoring IoT. Tingkat kepedasan tinggi dan tahan lama untuk pengiriman " +
             "jarak jauh. Dipanen tepat waktu untuk memastikan kesegaran maksimal.",
@@ -79,9 +91,13 @@ val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
         ),
         imageContentDescription = "Tomat merah segar dalam keranjang kayu",
         healthScore = 82.0,
+        pricePerKg = 12_000L,
         pricePerKgLabel = "Rp 12.000",
+        quantityAvailableKg = 300.0,
         quantityAvailableLabel = "300 Kg",
+        minOrderKg = 5.0,
         minOrderLabel = "5 Kg",
+        unitLabel = "Kg",
         description = "Tomat merah segar hasil greenhouse dengan kontrol suhu & kelembapan otomatis. " +
             "Rasa asam-manis seimbang, cocok untuk kebutuhan dapur maupun industri olahan.",
         sensorHistoryStatusLabel = "Kondisi Stabil",
@@ -106,9 +122,13 @@ val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
         ),
         imageContentDescription = "Bayam cabut organik segar dalam ikatan",
         healthScore = 63.0,
+        pricePerKg = 4_500L,
         pricePerKgLabel = "Rp 4.500",
+        quantityAvailableKg = 120.0,
         quantityAvailableLabel = "120 Ikat",
+        minOrderKg = 5.0,
         minOrderLabel = "5 Ikat",
+        unitLabel = "Ikat",
         description = "Bayam cabut organik tanpa pestisida kimia, ditanam di greenhouse dengan " +
             "monitoring kelembapan tanah berkala. Cocok untuk pelanggan yang mengutamakan produk sehat.",
         sensorHistoryStatusLabel = "Perlu Perhatian",
@@ -133,9 +153,13 @@ val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
         ),
         imageContentDescription = "Paprika hijau besar di atas permukaan gelap",
         healthScore = 91.0,
+        pricePerKg = 35_000L,
         pricePerKgLabel = "Rp 35.000",
+        quantityAvailableKg = 150.0,
         quantityAvailableLabel = "150 Kg",
+        minOrderKg = 10.0,
         minOrderLabel = "10 Kg",
+        unitLabel = "Kg",
         description = "Paprika hijau besar hasil budidaya greenhouse Koperasi Tani, dipanen segar " +
             "dengan skor kesehatan tanaman tinggi. Tekstur renyah dan tebal, ideal untuk restoran " +
             "maupun ritel.",

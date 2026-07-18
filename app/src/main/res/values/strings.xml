@@ -52,6 +52,26 @@
     <string name="listing_detail_buy_now_button">Beli Sekarang</string>
     <string name="listing_detail_image_pager_content_description">Foto produk %1$d dari %2$d</string>
 
+    <!-- Checkout - Pembeli -->
+    <string name="checkout_title">Checkout</string>
+    <string name="checkout_back_content_description">Kembali</string>
+    <string name="checkout_item_section_title">Detail Produk</string>
+    <string name="checkout_price_per_unit_suffix">/ %1$s</string>
+    <string name="checkout_quantity_decrease_content_description">Kurangi jumlah</string>
+    <string name="checkout_quantity_increase_content_description">Tambah jumlah</string>
+    <string name="checkout_delivery_section_title">Metode Pengiriman</string>
+    <string name="checkout_delivery_pickup_label">Ambil Langsung</string>
+    <string name="checkout_delivery_pickup_sublabel">Gratis</string>
+    <string name="checkout_delivery_delivery_label">Kirim ke Alamat</string>
+    <string name="checkout_delivery_delivery_sublabel">Estimasi %1$s</string>
+    <string name="checkout_address_label">Alamat Pengiriman</string>
+    <string name="checkout_summary_section_title">Ringkasan Pesanan</string>
+    <string name="checkout_summary_subtotal_label">Subtotal Produk</string>
+    <string name="checkout_summary_service_fee_label">Biaya Layanan</string>
+    <string name="checkout_summary_shipping_label">Ongkos Kirim</string>
+    <string name="checkout_summary_total_label">Total Pembayaran</string>
+    <string name="checkout_confirm_button">Konfirmasi Pesanan</string>
+
     <!-- Dashboard Monitoring - Petani -->
     <string name="dashboard_greeting">Selamat Pagi, %1$s</string>
     <string name="dashboard_realtime_badge">Real-time aktif</string>

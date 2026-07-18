@@ -19,7 +19,11 @@ object Routes {
     const val BUYER_MARKETPLACE = "buyer/marketplace"
     const val BUYER_MAP = "buyer/map"
     const val BUYER_DETAIL = "buyer/listing/{listingId}"
+    const val BUYER_CHECKOUT = "buyer/checkout/{listingId}"
 
     /** Bangun route [BUYER_DETAIL] konkret untuk navigasi ke listing tertentu. */
     fun buyerDetail(listingId: String) = "buyer/listing/$listingId"
+
+    /** Bangun route [BUYER_CHECKOUT] konkret untuk navigasi checkout listing tertentu. */
+    fun buyerCheckout(listingId: String) = "buyer/checkout/$listingId"
 }

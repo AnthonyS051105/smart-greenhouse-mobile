@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.teti2026.smartgreenhouse.data.model.UserRole
 import com.teti2026.smartgreenhouse.ui.auth.LoginRegisterRoute
+import com.teti2026.smartgreenhouse.ui.buyer.CheckoutRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MapRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MarketplaceRoute
@@ -125,7 +126,23 @@ fun GreenhouseNavGraph(
                 listingId = listingId,
                 onBackClick = { navController.popBackStack() },
                 onChatClick = { /* TODO: navigasi ke Chat saat screen tersebut dibuat */ },
-                onBuyClick = { /* TODO: navigasi ke Checkout saat screen tersebut dibuat */ }
+                onBuyClick = { id -> navController.navigate(Routes.buyerCheckout(id)) }
+            )
+        }
+        composable(
+            route = Routes.BUYER_CHECKOUT,
+            arguments = listOf(navArgument("listingId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val listingId = backStackEntry.arguments?.getString("listingId").orEmpty()
+            CheckoutRoute(
+                listingId = listingId,
+                onBackClick = { navController.popBackStack() },
+                onOrderConfirmed = {
+                    // TODO: navigasi ke screen "Konfirmasi Pesanan - Berhasil" (sudah ada di
+                    // Stitch, belum dibuat) saat order sungguhan tersimpan ke Firestore. Untuk
+                    // sekarang kembali ke Marketplace & bersihkan Detail+Checkout dari back stack.
+                    navController.popBackStack(Routes.BUYER_MARKETPLACE, inclusive = false)
+                }
             )
         }
     }

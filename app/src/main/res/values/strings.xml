@@ -72,6 +72,20 @@
     <string name="checkout_summary_total_label">Total Pembayaran</string>
     <string name="checkout_confirm_button">Konfirmasi Pesanan</string>
 
+    <!-- Riwayat Pesanan - Pembeli -->
+    <string name="order_history_title">Riwayat Pesanan</string>
+    <string name="order_history_back_content_description">Kembali</string>
+    <string name="order_history_tab_ongoing">Berlangsung</string>
+    <string name="order_history_tab_completed">Selesai</string>
+    <string name="order_history_tab_cancelled">Dibatalkan</string>
+    <string name="order_history_status_pending">Menunggu Konfirmasi</string>
+    <string name="order_history_status_confirmed">Diproses</string>
+    <string name="order_history_status_completed">Selesai</string>
+    <string name="order_history_status_cancelled">Dibatalkan</string>
+    <string name="order_history_empty_ongoing">Belum ada pesanan yang berlangsung</string>
+    <string name="order_history_empty_completed">Belum ada pesanan yang selesai</string>
+    <string name="order_history_empty_cancelled">Belum ada pesanan yang dibatalkan</string>
+
     <!-- Dashboard Monitoring - Petani -->
     <string name="dashboard_greeting">Selamat Pagi, %1$s</string>
     <string name="dashboard_realtime_badge">Real-time aktif</string>

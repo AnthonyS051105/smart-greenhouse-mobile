@@ -13,23 +13,25 @@ import com.teti2026.smartgreenhouse.ui.buyer.CheckoutRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MapRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MarketplaceRoute
+import com.teti2026.smartgreenhouse.ui.buyer.OrderHistoryRoute
 import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
 
-private val BUYER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP)
+private val BUYER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP, Routes.BUYER_ORDERS)
 private val FARMER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.FARMER_DASHBOARD)
 
 /**
  * Graf navigasi utama, lihat `docs/SDD.md §6`. Saat ini login → Dashboard App Petani atau
- * tab Pasar/Peta App Pembeli yang tersambung; sisa farmerGraph & tab Pesanan/Profil menyusul
+ * tab Pasar/Peta/Pesanan App Pembeli yang tersambung; sisa farmerGraph & tab Profil menyusul
  * saat screen lain dibuat.
  */
 @Composable
 fun GreenhouseNavGraph(
     navController: NavHostController = rememberNavController()
 ) {
-    // Handler bersama tab bawah App Pembeli (Pasar <-> Peta): pola standar Navigation Compose
-    // untuk bottom nav agar back stack tiap tab tersimpan (popUpTo start + saveState/restoreState).
+    // Handler bersama tab bawah App Pembeli (Pasar <-> Peta <-> Pesanan): pola standar
+    // Navigation Compose untuk bottom nav agar back stack tiap tab tersimpan
+    // (popUpTo start + saveState/restoreState).
     val onBuyerBottomNavigate: (String) -> Unit = { route ->
         if (route in BUYER_BOTTOM_NAV_DESTINATIONS) {
             navController.navigate(route) {
@@ -38,7 +40,7 @@ fun GreenhouseNavGraph(
                 restoreState = true
             }
         }
-        // TODO: tab Pesanan/Profil belum punya destination.
+        // TODO: tab Profil belum punya destination.
     }
 
     // Sama seperti [onBuyerBottomNavigate], untuk tab bawah App Petani. Hanya Dashboard yang
@@ -143,6 +145,12 @@ fun GreenhouseNavGraph(
                     // sekarang kembali ke Marketplace & bersihkan Detail+Checkout dari back stack.
                     navController.popBackStack(Routes.BUYER_MARKETPLACE, inclusive = false)
                 }
+            )
+        }
+        composable(Routes.BUYER_ORDERS) {
+            OrderHistoryRoute(
+                onBackClick = { navController.popBackStack() },
+                onBottomNavigate = onBuyerBottomNavigate
             )
         }
     }

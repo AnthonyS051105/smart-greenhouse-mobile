@@ -149,4 +149,51 @@
     <string name="chat_attachment_content_description">Lampirkan file</string>
     <string name="chat_message_input_placeholder">Ketik pesan...</string>
     <string name="chat_send_content_description">Kirim pesan</string>
+
+    <!-- Setup Greenhouse (3 langkah: Data Utama, Lokasi Lahan, Pairing Perangkat) -->
+    <string name="setup_greenhouse_top_bar_title">Setup Greenhouse</string>
+    <string name="setup_greenhouse_back_content_description">Kembali</string>
+    <string name="setup_greenhouse_step_progress">Langkah %1$d dari %2$d</string>
+    <string name="setup_greenhouse_step_data">Data Greenhouse</string>
+    <string name="setup_greenhouse_step_location">Lokasi Lahan</string>
+    <string name="setup_greenhouse_step_pairing">Pairing Perangkat</string>
+
+    <string name="setup_greenhouse_data_title">Informasi Dasar</string>
+    <string name="setup_greenhouse_data_subtitle">Lengkapi data profil greenhouse Anda untuk pengaturan yang lebih akurat.</string>
+    <string name="setup_greenhouse_name_label">Nama Greenhouse</string>
+    <string name="setup_greenhouse_size_label">Ukuran (m²)</string>
+    <string name="setup_greenhouse_crop_type_label">Jenis Tanaman</string>
+    <string name="setup_greenhouse_crop_cabai_rawit">Cabai Rawit</string>
+    <string name="setup_greenhouse_crop_tomat">Tomat</string>
+    <string name="setup_greenhouse_crop_selada">Selada</string>
+    <string name="setup_greenhouse_crop_paprika">Paprika</string>
+    <string name="setup_greenhouse_data_next_button">Lanjut ke Lokasi</string>
+
+    <string name="setup_greenhouse_location_top_bar_title">Setup Lahan</string>
+    <string name="setup_greenhouse_location_title">Tentukan Lokasi Lahan</string>
+    <string name="setup_greenhouse_location_subtitle">Geser peta untuk menentukan titik koordinat lahan Anda secara presisi. Data ini digunakan untuk prediksi cuaca.</string>
+    <string name="setup_greenhouse_location_search_placeholder">Cari Lokasi...</string>
+    <string name="setup_greenhouse_location_drag_hint">Geser peta untuk memindahkan pin</string>
+    <string name="setup_greenhouse_location_coordinate_label">Koordinat Terpilih</string>
+    <string name="setup_greenhouse_location_unknown_label">Lokasi belum dikenali</string>
+    <string name="setup_greenhouse_location_my_location_content_description">Pusatkan ke lokasi saya</string>
+    <string name="setup_greenhouse_location_next_button">Lanjut ke Pairing</string>
+
+    <string name="setup_greenhouse_pairing_title">Pairing Perangkat</string>
+    <string name="setup_greenhouse_pairing_step_label">Langkah 3 dari 3</string>
+    <string name="setup_greenhouse_pairing_instruction">Masukkan 6 digit kode pairing yang tertera pada perangkat IoT Anda.</string>
+    <string name="setup_greenhouse_pairing_finish_button">Selesaikan Setup</string>
+    <string name="setup_greenhouse_pairing_help_button">Butuh Bantuan?</string>
+
+    <!-- Profil & Pengaturan - Petani -->
+    <string name="profile_farmer_top_bar_title">AgriSmart</string>
+    <string name="profile_farmer_notifications_content_description">Notifikasi</string>
+    <string name="profile_farmer_avatar_content_description">Foto profil petani</string>
+    <string name="profile_farmer_menu_edit_profile">Edit Profil</string>
+    <string name="profile_farmer_menu_my_greenhouses">Greenhouse Saya</string>
+    <string name="profile_farmer_menu_language">Bahasa</string>
+    <string name="profile_farmer_menu_language_value">ID</string>
+    <string name="profile_farmer_menu_notifications">Notifikasi</string>
+    <string name="profile_farmer_menu_help">Bantuan</string>
+    <string name="profile_farmer_menu_logout">Keluar</string>
 </resources>

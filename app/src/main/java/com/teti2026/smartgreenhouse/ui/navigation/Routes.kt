@@ -11,10 +11,14 @@ object Routes {
 
     // Petani
     const val FARMER_DASHBOARD = "farmer/dashboard"
+    const val FARMER_PROFILE = "farmer/profile"
 
-    // TODO: belum ada destination — dituju saat petani login tanpa data lahan
-    // (lihat FarmerHomeRoute.kt). Dibuat pada sesi berikutnya.
-    const val FARMER_SETUP_GREENHOUSE = "farmer/setup-greenhouse"
+    // Setup Greenhouse — flow 3 langkah (Data Utama -> Lokasi Lahan -> Pairing Perangkat).
+    // Dituju saat petani login tanpa data lahan (lihat NavGraph.kt) dan saat menekan
+    // "Greenhouse Saya" di Profil untuk menambah lahan baru.
+    const val FARMER_SETUP_GREENHOUSE_DATA = "farmer/setup-greenhouse/data"
+    const val FARMER_SETUP_GREENHOUSE_LOCATION = "farmer/setup-greenhouse/location"
+    const val FARMER_SETUP_GREENHOUSE_PAIRING = "farmer/setup-greenhouse/pairing"
 
     // Pembeli
     const val BUYER_MARKETPLACE = "buyer/marketplace"

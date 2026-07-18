@@ -1,6 +1,7 @@
 package com.teti2026.smartgreenhouse.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -21,9 +22,14 @@ import com.teti2026.smartgreenhouse.ui.buyer.ReviewRoute
 import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
+import com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute
+import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupDataRoute
+import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupLocationRoute
+import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupPairingRoute
+import com.teti2026.smartgreenhouse.ui.farmer.setup.rememberGreenhouseSetupStateHolder
 
 private val BUYER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP, Routes.BUYER_ORDERS)
-private val FARMER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.FARMER_DASHBOARD)
+private val FARMER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.FARMER_DASHBOARD, Routes.FARMER_PROFILE)
 
 /**
  * Graf navigasi utama, lihat `docs/SDD.md §6`. Saat ini login → Dashboard App Petani atau
@@ -71,13 +77,12 @@ fun GreenhouseNavGraph(
                             // petani ini sudah punya dokumen farm/plot) via AuthViewModel/
                             // FirestoreRepository saat MOB-T06/T07 dikerjakan. Untuk sekarang
                             // selalu true supaya Dashboard bisa dilihat & diuji end-to-end;
-                            // saat false, tujuan adalah Routes.FARMER_SETUP_GREENHOUSE
-                            // (belum ada destination, screen menyusul).
+                            // saat false, tujuan adalah flow Setup Greenhouse (langkah 1/3).
                             val hasFarmSetup = true
                             val destination = if (hasFarmSetup) {
                                 Routes.FARMER_DASHBOARD
                             } else {
-                                Routes.FARMER_SETUP_GREENHOUSE
+                                Routes.FARMER_SETUP_GREENHOUSE_DATA
                             }
                             navController.navigate(destination) {
                                 popUpTo(Routes.LOGIN) { inclusive = true }
@@ -96,6 +101,61 @@ fun GreenhouseNavGraph(
             DashboardFarmerRoute(
                 onImageHistoryClick = { /* TODO: navigasi ke Riwayat Citra saat screen dibuat */ },
                 onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        composable(Routes.FARMER_PROFILE) {
+            ProfileFarmerRoute(
+                onMyGreenhousesClick = {
+                    navController.navigate(Routes.FARMER_SETUP_GREENHOUSE_DATA)
+                },
+                onLogoutClick = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        // Setup Greenhouse — flow 3 langkah. [GreenhouseSetupStateHolder] di-scope ke
+        // NavBackStackEntry milik Routes.FARMER_SETUP_GREENHOUSE_DATA (langkah 1) sehingga
+        // ketiga step berbagi instance yang SAMA — pola standar Navigation Compose untuk
+        // shared state antar-destination dalam satu alur. Instance baru otomatis dibuat tiap
+        // kali flow ini dimulai ulang (dari Login atau "Greenhouse Saya" di Profil), karena
+        // back stack entry lama sudah di-pop (popUpTo inclusive) saat flow sebelumnya selesai.
+        composable(Routes.FARMER_SETUP_GREENHOUSE_DATA) { backStackEntry ->
+            val setupStateHolder = rememberGreenhouseSetupStateHolder(backStackEntry)
+            GreenhouseSetupDataRoute(
+                stateHolder = setupStateHolder,
+                onBackClick = { navController.popBackStack() },
+                onNextClick = { navController.navigate(Routes.FARMER_SETUP_GREENHOUSE_LOCATION) }
+            )
+        }
+        composable(Routes.FARMER_SETUP_GREENHOUSE_LOCATION) {
+            val parentEntry = remember(it) {
+                navController.getBackStackEntry(Routes.FARMER_SETUP_GREENHOUSE_DATA)
+            }
+            val setupStateHolder = rememberGreenhouseSetupStateHolder(parentEntry)
+            GreenhouseSetupLocationRoute(
+                stateHolder = setupStateHolder,
+                onBackClick = { navController.popBackStack() },
+                onNextClick = { navController.navigate(Routes.FARMER_SETUP_GREENHOUSE_PAIRING) }
+            )
+        }
+        composable(Routes.FARMER_SETUP_GREENHOUSE_PAIRING) {
+            val parentEntry = remember(it) {
+                navController.getBackStackEntry(Routes.FARMER_SETUP_GREENHOUSE_DATA)
+            }
+            val setupStateHolder = rememberGreenhouseSetupStateHolder(parentEntry)
+            GreenhouseSetupPairingRoute(
+                stateHolder = setupStateHolder,
+                onBackClick = { navController.popBackStack() },
+                onFinishClick = {
+                    // TODO: simpan Farm + Plot ke Firestore via FirestoreRepository saat
+                    // MOB-T07 dikerjakan. Untuk sekarang langsung navigasi ke Dashboard.
+                    navController.navigate(Routes.FARMER_DASHBOARD) {
+                        popUpTo(Routes.FARMER_SETUP_GREENHOUSE_DATA) { inclusive = true }
+                    }
+                }
             )
         }
         composable(Routes.BUYER_MARKETPLACE) {

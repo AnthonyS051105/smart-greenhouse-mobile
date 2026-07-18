@@ -7,6 +7,11 @@ import com.google.android.gms.maps.model.LatLng
  * (lihat `docs/data-contracts.md §3.2/§3.7`). Data statis sementara (lihat [sampleNearbyFarms]);
  * akan diganti hasil query `FirestoreRepository.getFarmsForMap()` begitu MOB-T19 dikerjakan
  * (lihat `docs/SDD.md §4.2`).
+ *
+ * [primaryListingId] — penyederhanaan sementara: kartu kebun di bottom sheet Peta belum
+ * menampilkan daftar komoditas per farm (lihat keputusan di `docs/PROGRESS.md`), jadi tap kartu
+ * langsung membuka listing utama farm tersebut. Akan diganti navigasi "tap komoditas → listing
+ * spesifik" begitu bottom sheet punya daftar komoditas per farm.
  */
 data class MapFarmItem(
     val id: String,
@@ -16,7 +21,8 @@ data class MapFarmItem(
     val rating: Double?,
     val imageUrl: String?,
     val imageContentDescription: String?,
-    val cropTags: List<String>
+    val cropTags: List<String>,
+    val primaryListingId: String
 )
 
 val sampleNearbyFarms = listOf(
@@ -28,7 +34,8 @@ val sampleNearbyFarms = listOf(
         rating = 4.8,
         imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuC5WMa_uwzeuUgxZbGmjwzEVdQdAY4VK65eZinSSN7mBvUal7eLGOdFCICBWxDmJy6SfKCuSNU58B6A6FPEmSj8UZHuhon2HunRmb6eSy2ma-pmoVAs5orI3T3wh2pzeZtksT9hPeGDEGXG47w7MR0KEOR2notg4_akJY3MImH1sCSlVCFLHJruKBGJpf10LALrjCSUBYGJt8mQtQhwGE5NSS3giD-h_gz411a-tpwl_CQ3wvsknJyajbHZOvCQyhrugba8Iwgh9w",
         imageContentDescription = "Kebun sayur hidroponik dengan selada dan bayam segar di dalam greenhouse",
-        cropTags = listOf("Selada", "Tomat", "+2")
+        cropTags = listOf("Selada", "Tomat", "+2"),
+        primaryListingId = "listing-cabai-rawit-1"
     ),
     MapFarmItem(
         id = "farm-agro-sejahtera",
@@ -38,7 +45,8 @@ val sampleNearbyFarms = listOf(
         rating = 4.5,
         imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBE-ApToVeyiW4PJfO8c2v0Qes3wHbIkCbS6h67SPb4P3v8i8SGZHakcjXfd3t00pVphShiYA7jRZOoFkUsSq_XJ1gUoMPfp-8uKEVrPlx1-zRPzng3gRhFh3i-8hw2HTgzbLfx6MbHtt6KMLHOztS6HNi3wC8HwpPm-AZGpMKYcdESGhCM_7CSXbAjsWKd76xC5z02Pb1UMKe_F3-nF1PusONbuQwhLdsIwDm6i7uYvsGKNUKgluqhMLL_vEICkDTptrgiEW1UGw",
         imageContentDescription = "Barisan tanaman tomat matang siap panen",
-        cropTags = listOf("Cabai", "Bawang")
+        cropTags = listOf("Cabai", "Bawang"),
+        primaryListingId = "listing-tomat-1"
     ),
     MapFarmItem(
         id = "farm-hidroponik-lestari",
@@ -48,6 +56,7 @@ val sampleNearbyFarms = listOf(
         rating = null,
         imageUrl = null,
         imageContentDescription = null,
-        cropTags = listOf("Pakcoy", "Kangkung")
+        cropTags = listOf("Pakcoy", "Kangkung"),
+        primaryListingId = "listing-bayam-1"
     )
 )

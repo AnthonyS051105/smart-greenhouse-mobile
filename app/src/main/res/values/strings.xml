@@ -33,4 +33,22 @@
     <string name="map_see_all_button">Lihat Semua Produk</string>
     <string name="map_rating_content_description">Rating %1$s</string>
     <string name="map_farm_image_placeholder_content_description">Belum ada foto kebun</string>
+
+    <!-- Detail Produk - Pembeli -->
+    <string name="listing_detail_back_content_description">Kembali</string>
+    <string name="listing_detail_share_content_description">Bagikan produk</string>
+    <string name="listing_detail_favorite_content_description">Tambah ke favorit</string>
+    <string name="listing_detail_unfavorite_content_description">Hapus dari favorit</string>
+    <string name="listing_detail_health_score_label">Skor Kesehatan</string>
+    <string name="listing_detail_sensor_history_title">Riwayat Sensor 7 Hari</string>
+    <string name="listing_detail_sensor_history_legend">Kelembapan Udara</string>
+    <string name="listing_detail_description_title">Detail Produk</string>
+    <string name="listing_detail_quantity_label">Kuantitas Tersedia</string>
+    <string name="listing_detail_min_order_label">Minimal Order</string>
+    <string name="listing_detail_farmer_section_title">Tentang Petani</string>
+    <string name="listing_detail_visit_store_content_description">Kunjungi toko petani</string>
+    <string name="listing_detail_price_per_kg_label">Harga per Kg</string>
+    <string name="listing_detail_chat_content_description">Chat dengan petani</string>
+    <string name="listing_detail_buy_now_button">Beli Sekarang</string>
+    <string name="listing_detail_image_pager_content_description">Foto produk %1$d dari %2$d</string>
 </resources>

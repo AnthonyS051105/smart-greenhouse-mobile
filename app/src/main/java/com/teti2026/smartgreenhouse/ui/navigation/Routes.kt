@@ -2,7 +2,7 @@ package com.teti2026.smartgreenhouse.ui.navigation
 
 /**
  * Route id NavHost, sesuai peta navigasi di `docs/SDD.md §6`.
- * LOGIN, BUYER_MARKETPLACE, BUYER_MAP, BUYER_DETAIL, BUYER_CHECKOUT, BUYER_ORDERS &
+ * LOGIN, BUYER_MARKETPLACE, BUYER_MAP, BUYER_DETAIL, BUYER_CHECKOUT, BUYER_ORDERS, BUYER_REVIEW &
  * FARMER_DASHBOARD yang punya destination — sisanya menyusul per screen dibuat.
  */
 object Routes {
@@ -21,10 +21,14 @@ object Routes {
     const val BUYER_DETAIL = "buyer/listing/{listingId}"
     const val BUYER_CHECKOUT = "buyer/checkout/{listingId}"
     const val BUYER_ORDERS = "buyer/orders"
+    const val BUYER_REVIEW = "buyer/review/{orderId}"
 
     /** Bangun route [BUYER_DETAIL] konkret untuk navigasi ke listing tertentu. */
     fun buyerDetail(listingId: String) = "buyer/listing/$listingId"
 
     /** Bangun route [BUYER_CHECKOUT] konkret untuk navigasi checkout listing tertentu. */
     fun buyerCheckout(listingId: String) = "buyer/checkout/$listingId"
+
+    /** Bangun route [BUYER_REVIEW] konkret untuk memberi ulasan pesanan tertentu. */
+    fun buyerReview(orderId: String) = "buyer/review/$orderId"
 }

@@ -86,6 +86,21 @@
     <string name="order_history_empty_completed">Belum ada pesanan yang selesai</string>
     <string name="order_history_empty_cancelled">Belum ada pesanan yang dibatalkan</string>
 
+    <!-- Beri Rating & Ulasan - AgriSmart -->
+    <string name="review_title">Beri Ulasan</string>
+    <string name="review_back_content_description">Kembali</string>
+    <string name="review_seller_label">Petani: %1$s</string>
+    <string name="review_rating_prompt">Beri nilai untuk transaksi ini</string>
+    <string name="review_star_content_description">Beri %1$d bintang</string>
+    <string name="review_rating_label_1">Sangat Buruk</string>
+    <string name="review_rating_label_2">Buruk</string>
+    <string name="review_rating_label_3">Cukup</string>
+    <string name="review_rating_label_4">Baik</string>
+    <string name="review_rating_label_5">Sangat Baik</string>
+    <string name="review_comment_label">Ulasan Anda</string>
+    <string name="review_comment_placeholder">Bagaimana kualitas produk dan pengalaman Anda bertransaksi dengan %1$s?</string>
+    <string name="review_submit_button">Kirim Ulasan</string>
+
     <!-- Dashboard Monitoring - Petani -->
     <string name="dashboard_greeting">Selamat Pagi, %1$s</string>
     <string name="dashboard_realtime_badge">Real-time aktif</string>

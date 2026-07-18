@@ -12,7 +12,11 @@ import com.teti2026.smartgreenhouse.ui.navigation.Routes
 @Composable
 fun OrderHistoryRoute(
     onBackClick: () -> Unit = {},
-    onBottomNavigate: (String) -> Unit = {}
+    onBottomNavigate: (String) -> Unit = {},
+    // Dibubbling ke NavGraph (bukan dihardcode di sini) karena tujuan navigasi tergantung
+    // OrderStatus kartu yang di-tap (lihat GreenhouseNavGraph): "Selesai" -> Routes.BUYER_REVIEW,
+    // status lain -> belum ada screen "Detail Pesanan" tujuan.
+    onOrderClick: (String) -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(OrderHistoryTab.BERLANGSUNG) }
 
@@ -20,7 +24,7 @@ fun OrderHistoryRoute(
         orders = sampleOrderHistory,
         selectedTab = selectedTab,
         onTabSelected = { selectedTab = it },
-        onOrderClick = { /* TODO: navigasi ke Detail Pesanan saat screen tersebut dibuat */ },
+        onOrderClick = onOrderClick,
         onBackClick = onBackClick,
         currentBottomNavRoute = Routes.BUYER_ORDERS,
         onBottomNavigate = onBottomNavigate

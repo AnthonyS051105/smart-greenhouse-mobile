@@ -14,7 +14,10 @@ import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MapRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MarketplaceRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderHistoryRoute
+import com.teti2026.smartgreenhouse.ui.buyer.OrderStatus
+import com.teti2026.smartgreenhouse.ui.buyer.ReviewRoute
 import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
+import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
 
 private val BUYER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP, Routes.BUYER_ORDERS)
@@ -150,7 +153,32 @@ fun GreenhouseNavGraph(
         composable(Routes.BUYER_ORDERS) {
             OrderHistoryRoute(
                 onBackClick = { navController.popBackStack() },
-                onBottomNavigate = onBuyerBottomNavigate
+                onBottomNavigate = onBuyerBottomNavigate,
+                onOrderClick = { orderId ->
+                    // Hanya pesanan "Selesai" yang punya tujuan sejauh ini (Beri Rating & Ulasan).
+                    // Status lain (Berlangsung/Dibatalkan) belum punya screen "Detail Pesanan" di
+                    // Stitch — tap diabaikan sampai screen tersebut dibuat.
+                    val order = sampleOrderHistory.firstOrNull { it.id == orderId }
+                    if (order?.status == OrderStatus.COMPLETED) {
+                        navController.navigate(Routes.buyerReview(orderId))
+                    }
+                }
+            )
+        }
+        composable(
+            route = Routes.BUYER_REVIEW,
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId").orEmpty()
+            ReviewRoute(
+                orderId = orderId,
+                onBackClick = { navController.popBackStack() },
+                onReviewSubmitted = {
+                    // TODO: setelah FirestoreRepository.createReview(review) sungguhan tersimpan
+                    // (MOB-T23), tampilkan Snackbar konfirmasi (docs/UIUX-Flow.md §6) sebelum
+                    // kembali. Untuk sekarang langsung kembali ke Riwayat Pesanan.
+                    navController.popBackStack()
+                }
             )
         }
     }

@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Catatan progres sesi kerja lokal — tidak untuk di-push
+docs/PROGRESS.md

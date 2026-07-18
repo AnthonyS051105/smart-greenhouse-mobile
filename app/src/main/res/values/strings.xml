@@ -1,3 +1,17 @@
 <resources>
-    <string name="app_name">smart-greenhouse-mobile</string>
+    <string name="app_name">GreenHouse+</string>
+
+    <!-- Login / Register -->
+    <string name="auth_brand_name">GreenHouse+</string>
+    <string name="auth_hero_content_description">Interior greenhouse dengan tanaman cabai yang sehat</string>
+    <string name="auth_welcome_title">Selamat Datang</string>
+    <string name="auth_role_farmer">Petani</string>
+    <string name="auth_role_buyer">Pembeli</string>
+    <string name="auth_email_label">Email atau Nomor Telepon</string>
+    <string name="auth_password_label">Kata Sandi</string>
+    <string name="auth_toggle_password_visibility">Tampilkan/sembunyikan kata sandi</string>
+    <string name="auth_forgot_password">Lupa Sandi?</string>
+    <string name="auth_login_button">Masuk</string>
+    <string name="auth_register_prompt">Belum punya akun?</string>
+    <string name="auth_register_cta">Daftar Akun Baru</string>
 </resources>

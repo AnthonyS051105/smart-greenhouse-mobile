@@ -14,6 +14,7 @@ import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MapRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MarketplaceRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderHistoryRoute
+import com.teti2026.smartgreenhouse.ui.buyer.OrderSuccessRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderStatus
 import com.teti2026.smartgreenhouse.ui.buyer.ReviewRoute
 import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
@@ -142,12 +143,29 @@ fun GreenhouseNavGraph(
             CheckoutRoute(
                 listingId = listingId,
                 onBackClick = { navController.popBackStack() },
-                onOrderConfirmed = {
-                    // TODO: navigasi ke screen "Konfirmasi Pesanan - Berhasil" (sudah ada di
-                    // Stitch, belum dibuat) saat order sungguhan tersimpan ke Firestore. Untuk
-                    // sekarang kembali ke Marketplace & bersihkan Detail+Checkout dari back stack.
-                    navController.popBackStack(Routes.BUYER_MARKETPLACE, inclusive = false)
+                onOrderConfirmed = { id ->
+                    // TODO: setelah FirestoreRepository.createOrder(order) sungguhan tersimpan
+                    // (MOB-T21), oper id dokumen order nyata ke OrderSuccessRoute alih-alih hanya
+                    // listingId. Detail & Checkout dibersihkan dari back stack (tidak masuk akal
+                    // menekan "back" dari layar sukses menuju form checkout yang sudah selesai).
+                    navController.navigate(Routes.buyerOrderSuccess(id)) {
+                        popUpTo(Routes.BUYER_MARKETPLACE) { inclusive = false }
+                    }
                 }
+            )
+        }
+        composable(
+            route = Routes.BUYER_ORDER_SUCCESS,
+            arguments = listOf(navArgument("listingId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val listingId = backStackEntry.arguments?.getString("listingId").orEmpty()
+            OrderSuccessRoute(
+                listingId = listingId,
+                // Sama seperti tab bawah App Pembeli: Riwayat Pesanan & Marketplace adalah
+                // destination bottom-nav, jadi pakai handler yang sama agar back stack tab
+                // konsisten (popUpTo start + saveState/restoreState).
+                onViewHistoryClick = { onBuyerBottomNavigate(Routes.BUYER_ORDERS) },
+                onBackToHomeClick = { onBuyerBottomNavigate(Routes.BUYER_MARKETPLACE) }
             )
         }
         composable(Routes.BUYER_ORDERS) {

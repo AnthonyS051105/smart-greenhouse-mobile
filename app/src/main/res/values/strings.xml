@@ -101,6 +101,13 @@
     <string name="review_comment_placeholder">Bagaimana kualitas produk dan pengalaman Anda bertransaksi dengan %1$s?</string>
     <string name="review_submit_button">Kirim Ulasan</string>
 
+    <!-- Konfirmasi Pesanan - Berhasil -->
+    <string name="order_success_title">Pesanan Berhasil!</string>
+    <string name="order_success_message">Pesanan Anda telah diteruskan ke %1$s. Silakan pantau status pesanan di riwayat transaksi.</string>
+    <string name="order_success_order_id">ID Pesanan: #%1$s</string>
+    <string name="order_success_view_history_button">Lihat Riwayat Transaksi</string>
+    <string name="order_success_back_home_button">Kembali ke Beranda</string>
+
     <!-- Dashboard Monitoring - Petani -->
     <string name="dashboard_greeting">Selamat Pagi, %1$s</string>
     <string name="dashboard_realtime_badge">Real-time aktif</string>

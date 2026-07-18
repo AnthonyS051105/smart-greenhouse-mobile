@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.teti2026.smartgreenhouse.data.model.UserRole
 import com.teti2026.smartgreenhouse.ui.auth.LoginRegisterRoute
+import com.teti2026.smartgreenhouse.ui.buyer.ChatRoute
 import com.teti2026.smartgreenhouse.ui.buyer.CheckoutRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MapRoute
@@ -131,8 +132,20 @@ fun GreenhouseNavGraph(
             ListingDetailRoute(
                 listingId = listingId,
                 onBackClick = { navController.popBackStack() },
-                onChatClick = { /* TODO: navigasi ke Chat saat screen tersebut dibuat */ },
+                onChatClick = { id -> navController.navigate(Routes.buyerChat(id)) },
                 onBuyClick = { id -> navController.navigate(Routes.buyerCheckout(id)) }
+            )
+        }
+        composable(
+            route = Routes.BUYER_CHAT,
+            arguments = listOf(navArgument("listingId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val listingId = backStackEntry.arguments?.getString("listingId").orEmpty()
+            ChatRoute(
+                listingId = listingId,
+                // Tombol back kembali ke screen sebelumnya di back stack, yaitu Detail Produk
+                // tempat tombol ikon chat ditekan — bukan destination tetap.
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable(

@@ -135,4 +135,18 @@
     <string name="dashboard_nav_create_listing">Tambah</string>
     <string name="dashboard_nav_chat">Pesan</string>
     <string name="dashboard_nav_profile">Profil</string>
+
+    <!-- Chat Negosiasi - AgriSmart -->
+    <string name="chat_back_content_description">Kembali</string>
+    <string name="chat_online_status">Online</string>
+    <string name="chat_more_options_content_description">Opsi lainnya</string>
+    <string name="chat_product_price_per_kg">%1$s / kg</string>
+    <string name="chat_product_stock">Stok: %1$s</string>
+    <string name="chat_today_label">Hari ini</string>
+    <string name="chat_message_read_content_description">Pesan sudah dibaca</string>
+    <string name="chat_quick_reply_agree">Setuju</string>
+    <string name="chat_quick_reply_negotiate">Nego Harga</string>
+    <string name="chat_attachment_content_description">Lampirkan file</string>
+    <string name="chat_message_input_placeholder">Ketik pesan...</string>
+    <string name="chat_send_content_description">Kirim pesan</string>
 </resources>

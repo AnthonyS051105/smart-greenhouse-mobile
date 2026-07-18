@@ -51,4 +51,32 @@
     <string name="listing_detail_chat_content_description">Chat dengan petani</string>
     <string name="listing_detail_buy_now_button">Beli Sekarang</string>
     <string name="listing_detail_image_pager_content_description">Foto produk %1$d dari %2$d</string>
+
+    <!-- Dashboard Monitoring - Petani -->
+    <string name="dashboard_greeting">Selamat Pagi, %1$s</string>
+    <string name="dashboard_realtime_badge">Real-time aktif</string>
+    <string name="dashboard_notifications_content_description">Notifikasi</string>
+    <string name="dashboard_health_score_title">Skor Kesehatan Lahan</string>
+    <string name="dashboard_health_score_trend">%1$s vs bulan lalu</string>
+    <string name="dashboard_sensor_temperature">Suhu</string>
+    <string name="dashboard_sensor_humidity">Kelembapan</string>
+    <string name="dashboard_sensor_pressure">Tekanan</string>
+    <string name="dashboard_sensor_gas">Kadar Gas</string>
+    <string name="dashboard_chart_title">Tren Historis</string>
+    <string name="dashboard_harvest_schedule_title">Jadwal Panen</string>
+    <string name="dashboard_harvest_estimate">Estimasi %1$s</string>
+    <string name="dashboard_harvest_countdown">H-%1$d</string>
+    <string name="dashboard_actuator_title">Aktuator</string>
+    <string name="dashboard_actuator_irrigation">Irigasi (Auto)</string>
+    <string name="dashboard_actuator_ventilation">Ventilasi (Auto)</string>
+    <string name="dashboard_actuator_last_active">Terakhir aktif: %1$s</string>
+    <string name="dashboard_actuator_off">Mati</string>
+    <string name="dashboard_shortcut_image_history_title">Riwayat Citra &amp; Skor AI</string>
+    <string name="dashboard_shortcut_image_history_subtitle">Lihat detail analisis</string>
+    <string name="dashboard_shortcut_content_description">Buka %1$s</string>
+    <string name="dashboard_nav_dashboard">Dashboard</string>
+    <string name="dashboard_nav_history">Riwayat</string>
+    <string name="dashboard_nav_create_listing">Tambah</string>
+    <string name="dashboard_nav_chat">Pesan</string>
+    <string name="dashboard_nav_profile">Profil</string>
 </resources>

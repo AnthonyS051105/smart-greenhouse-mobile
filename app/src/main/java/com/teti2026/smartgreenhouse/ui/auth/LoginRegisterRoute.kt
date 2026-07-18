@@ -9,10 +9,11 @@ import com.teti2026.smartgreenhouse.data.model.UserRole
 
 // TODO: pindahkan state ke AuthViewModel (StateFlow<UiState>) dan sambungkan ke
 // Firebase Auth saat fitur autentikasi diimplementasikan penuh. [onLoginClick] untuk
-// sementara langsung navigasi ke Marketplace tanpa validasi kredensial.
+// sementara langsung navigasi tanpa validasi kredensial, dan role dikirim ke caller
+// (GreenhouseNavGraph) supaya bisa menentukan tujuan navigasi (App Petani vs App Pembeli).
 @Composable
 fun LoginRegisterRoute(
-    onLoginClick: () -> Unit
+    onLoginClick: (UserRole) -> Unit
 ) {
     var role by remember { mutableStateOf(UserRole.FARMER) }
     var email by remember { mutableStateOf("") }
@@ -28,7 +29,7 @@ fun LoginRegisterRoute(
         onPasswordChange = { password = it },
         isPasswordVisible = isPasswordVisible,
         onTogglePasswordVisibility = { isPasswordVisible = !isPasswordVisible },
-        onLoginClick = onLoginClick,
+        onLoginClick = { onLoginClick(role) },
         onForgotPasswordClick = { /* TODO: navigasi ke lupa sandi */ },
         onRegisterClick = { /* TODO: navigasi ke register */ }
     )

@@ -115,9 +115,9 @@
     <string name="dashboard_health_score_title">Skor Kesehatan Lahan</string>
     <string name="dashboard_health_score_trend">%1$s vs bulan lalu</string>
     <string name="dashboard_sensor_temperature">Suhu</string>
-    <string name="dashboard_sensor_humidity">Kelembapan</string>
-    <string name="dashboard_sensor_pressure">Tekanan</string>
-    <string name="dashboard_sensor_gas">Kadar Gas</string>
+    <string name="dashboard_sensor_humidity">Kelembapan Udara</string>
+    <string name="dashboard_sensor_soil_moisture">Kelembapan Tanah</string>
+    <string name="dashboard_sensor_light">Intensitas Cahaya</string>
     <string name="dashboard_chart_title">Tren Historis</string>
     <string name="dashboard_harvest_schedule_title">Jadwal Panen</string>
     <string name="dashboard_harvest_estimate">Estimasi %1$s</string>

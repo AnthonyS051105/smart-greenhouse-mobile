@@ -27,8 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Kartu satu sensor pada grid Dashboard Petani — padanan kartu "Suhu/Kelembapan/Tekanan/Gas"
- * dari desain Stitch "Dashboard Monitoring (Revised)". [accentColor]/[accentContainerColor]
+ * Kartu satu sensor pada grid Dashboard Petani — padanan kartu "Suhu/Kelembapan Udara/
+ * Kelembapan Tanah/Intensitas Cahaya" dari desain Stitch "Dashboard Monitoring (Revised)".
+ * [accentColor]/[accentContainerColor]
  * membedakan sensor secara visual (mis. suhu=error, kelembapan=info) tanpa mengandalkan warna
  * saja sebagai satu-satunya pembeda — label & ikon tetap membedakan makna kartu.
  */

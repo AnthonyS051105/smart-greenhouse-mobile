@@ -223,7 +223,7 @@ private fun DashboardTopBar(
 }
 
 /**
- * Grid 2 kolom x 2 baris kartu sensor (suhu/kelembapan/tekanan/gas), disusun manual dengan
+ * Grid 2 kolom x 2 baris kartu sensor (suhu/kelembapan udara/kelembapan tanah/intensitas cahaya), disusun manual dengan
  * Row+Column (bukan LazyVerticalGrid) karena hanya 4 item tetap — menghindari nested-scroll
  * di dalam LazyColumn induk. Warna aksen tiap kartu dipasangkan berdasarkan urutan item.
  */
@@ -337,7 +337,7 @@ private fun DashboardFarmerScreenPreview() {
             healthScore = 85.0,
             healthScoreTrendLabel = "+5%",
             sensorItems = sampleSensorItems,
-            chartTabs = listOf("Suhu", "Kelembapan", "Tekanan", "Gas"),
+            chartTabs = listOf("Suhu", "Kelembapan Udara", "Kelembapan Tanah", "Cahaya"),
             selectedChartTab = selectedTab,
             onChartTabSelected = { selectedTab = it },
             chartPoints = sampleTrendChartPoints,

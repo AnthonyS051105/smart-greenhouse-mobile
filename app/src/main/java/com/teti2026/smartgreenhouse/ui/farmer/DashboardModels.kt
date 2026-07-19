@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * Model presentasi kartu sensor Dashboard Petani — satu kartu per field `sensor_readings`
- * terbaru (lihat `docs/data-contracts.md §3.4`: temperature/humidity/pressure/gas_level).
+ * terbaru (lihat `docs/data-contracts.md §3.4`: temperature/humidity/soil_moisture/light_intensity).
  * Sementara data statis (lihat [sampleSensorItems]); akan diganti hasil query Firestore
  * oleh DashboardViewModel + FirestoreRepository.getSensorReadings (MOB-T09).
  */

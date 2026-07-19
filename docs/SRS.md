@@ -48,7 +48,7 @@ Aplikasi adalah antarmuka utama pengguna. Petani memantau & menjual; pembeli men
 |----|-----------|-----------|
 | MOB-FR-04 | Setup greenhouse: nama, ukuran, jenis tanaman, pairing device. | Wajib |
 | MOB-FR-05 | Tandai lokasi lahan di peta (Google Maps + Places Autocomplete). | Wajib |
-| MOB-FR-06 | Dashboard monitoring: grafik suhu/kelembapan/tekanan real-time (dari Firestore). | Wajib |
+| MOB-FR-06 | Dashboard monitoring: grafik suhu/kelembapan udara/kelembapan tanah/intensitas cahaya real-time (dari Firestore). | Wajib |
 | MOB-FR-07 | Tampilkan status aktuator terkini (ON/OFF, auto/manual). | Wajib |
 | MOB-FR-08 | Kontrol manual override aktuator (via REST API ke backend). | Wajib |
 | MOB-FR-09 | Riwayat citra + skor kematangan/kesehatan dari AI. | Wajib |

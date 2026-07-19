@@ -56,7 +56,7 @@ enum class FarmerBottomNavItem(
     DASHBOARD(Routes.FARMER_DASHBOARD, R.string.dashboard_nav_dashboard, Icons.Filled.Dashboard, Icons.Outlined.Dashboard),
     HISTORY(Routes.FARMER_IMAGE_HISTORY, R.string.dashboard_nav_history, Icons.Filled.History, Icons.Outlined.History),
     CREATE_LISTING(Routes.FARMER_CREATE_LISTING_BASE, R.string.dashboard_nav_create_listing, Icons.Filled.Add, Icons.Filled.Add),
-    CHAT("farmer/chat", R.string.dashboard_nav_chat, Icons.AutoMirrored.Filled.Chat, Icons.AutoMirrored.Outlined.Chat),
+    CHAT(Routes.FARMER_CHAT, R.string.dashboard_nav_chat, Icons.AutoMirrored.Filled.Chat, Icons.AutoMirrored.Outlined.Chat),
     PROFILE(Routes.FARMER_PROFILE, R.string.dashboard_nav_profile, Icons.Filled.Person, Icons.Outlined.Person)
 }
 

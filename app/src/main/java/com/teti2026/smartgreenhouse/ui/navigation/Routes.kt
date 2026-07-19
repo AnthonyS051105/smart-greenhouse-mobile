@@ -32,6 +32,14 @@ object Routes {
     // sebagai ModalBottomSheet overlay di composable yang sama (bukan route terpisah).
     const val FARMER_IMAGE_HISTORY = "farmer/image-history"
 
+    // Tujuan tab "Pesan" navbar Petani — daftar percakapan dengan pembeli. Chat negosiasi satu
+    // percakapan adalah destination terpisah (bukan tab persisten), padanan [BUYER_CHAT].
+    const val FARMER_CHAT = "farmer/chat"
+    const val FARMER_CHAT_CONVERSATION = "farmer/chat/{conversationId}"
+
+    /** Bangun route [FARMER_CHAT_CONVERSATION] konkret untuk satu percakapan. */
+    fun farmerChatConversation(conversationId: String) = "farmer/chat/$conversationId"
+
     // Pembeli
     const val BUYER_MARKETPLACE = "buyer/marketplace"
     const val BUYER_MAP = "buyer/map"

@@ -150,6 +150,14 @@
     <string name="chat_message_input_placeholder">Ketik pesan...</string>
     <string name="chat_send_content_description">Kirim pesan</string>
 
+    <!-- Pesan - Petani (daftar percakapan + chat negosiasi sisi petani) -->
+    <string name="chat_list_title">Pesan</string>
+    <string name="chat_list_notifications_content_description">Notifikasi</string>
+    <string name="chat_list_empty">Belum ada percakapan dengan pembeli.</string>
+    <string name="chat_negotiating_with">Bernegosiasi dengan %1$s</string>
+    <string name="chat_quick_reply_farmer_accept">Setuju</string>
+    <string name="chat_quick_reply_farmer_stock_available">Stok Tersedia</string>
+
     <!-- Setup Greenhouse (3 langkah: Data Utama, Lokasi Lahan, Pairing Perangkat) -->
     <string name="setup_greenhouse_top_bar_title">Setup Greenhouse</string>
     <string name="setup_greenhouse_back_content_description">Kembali</string>

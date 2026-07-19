@@ -24,6 +24,8 @@ import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute
+import com.teti2026.smartgreenhouse.ui.farmer.chat.ChatListRoute
+import com.teti2026.smartgreenhouse.ui.farmer.chat.FarmerChatRoute
 import com.teti2026.smartgreenhouse.ui.farmer.history.ImageHistoryRoute
 import com.teti2026.smartgreenhouse.ui.farmer.history.sampleImageAnalysisDetails
 import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingFormState
@@ -35,7 +37,7 @@ import com.teti2026.smartgreenhouse.ui.farmer.setup.rememberGreenhouseSetupState
 
 private val BUYER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP, Routes.BUYER_ORDERS)
 private val FARMER_BOTTOM_NAV_DESTINATIONS =
-    setOf(Routes.FARMER_DASHBOARD, Routes.FARMER_IMAGE_HISTORY, Routes.FARMER_PROFILE)
+    setOf(Routes.FARMER_DASHBOARD, Routes.FARMER_IMAGE_HISTORY, Routes.FARMER_CHAT, Routes.FARMER_PROFILE)
 
 /**
  * Graf navigasi utama, lihat `docs/SDD.md §6`. Saat ini login → Dashboard App Petani atau
@@ -60,11 +62,11 @@ fun GreenhouseNavGraph(
         // TODO: tab Profil belum punya destination.
     }
 
-    // Sama seperti [onBuyerBottomNavigate], untuk tab bawah App Petani. Dashboard, Riwayat &
-    // Profil adalah tab persisten (pakai popUpTo+saveState/restoreState) — tab Pesan belum
-    // punya destination. "Tambah" (FARMER_CREATE_LISTING) BUKAN tab persisten (form
-    // transaksional dengan tombol back sendiri, sesuai desain Stitch "Buat Listing"), jadi
-    // di-push biasa lewat navigate() agar kembali dengan back-stack normal, bukan tab-switch.
+    // Sama seperti [onBuyerBottomNavigate], untuk tab bawah App Petani. Dashboard, Riwayat,
+    // Pesan & Profil adalah tab persisten (pakai popUpTo+saveState/restoreState). "Tambah"
+    // (FARMER_CREATE_LISTING) BUKAN tab persisten (form transaksional dengan tombol back
+    // sendiri, sesuai desain Stitch "Buat Listing"), jadi di-push biasa lewat navigate() agar
+    // kembali dengan back-stack normal, bukan tab-switch.
     val onFarmerBottomNavigate: (String) -> Unit = { route ->
         if (route == Routes.FARMER_CREATE_LISTING_BASE) {
             navController.navigate(route)
@@ -75,7 +77,6 @@ fun GreenhouseNavGraph(
                 restoreState = true
             }
         }
-        // TODO: tab Pesan belum punya destination.
     }
 
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
@@ -132,6 +133,26 @@ fun GreenhouseNavGraph(
                 onCreateListingClick = { navController.navigate(Routes.FARMER_CREATE_LISTING_BASE) },
                 onBackClick = { navController.popBackStack() },
                 onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        composable(Routes.FARMER_CHAT) {
+            ChatListRoute(
+                onConversationClick = { conversation ->
+                    navController.navigate(Routes.farmerChatConversation(conversation.id))
+                },
+                onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        composable(
+            route = Routes.FARMER_CHAT_CONVERSATION,
+            arguments = listOf(navArgument("conversationId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val conversationId = backStackEntry.arguments?.getString("conversationId").orEmpty()
+            FarmerChatRoute(
+                conversationId = conversationId,
+                // Tombol back kembali ke Pesan (daftar percakapan) di back stack, bukan
+                // destination tetap — sama seperti pola [Routes.BUYER_CHAT].
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable(Routes.FARMER_PROFILE) {

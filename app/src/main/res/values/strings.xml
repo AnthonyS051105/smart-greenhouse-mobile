@@ -266,7 +266,7 @@
     <string name="image_history_filter_sick">Sakit</string>
     <string name="image_history_filter_this_week">Minggu Ini</string>
     <string name="image_history_category_sick">Sakit</string>
-    <string name="image_history_fab_create_listing">Buat Listing</string>
+    <string name="image_history_fab_scan_plant">Pindai Tanaman</string>
 
     <!-- Detail Analisis Citra - AgriSmart -->
     <string name="image_analysis_category_healthy">Sehat</string>

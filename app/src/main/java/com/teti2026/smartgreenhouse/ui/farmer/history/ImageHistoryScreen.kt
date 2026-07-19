@@ -21,7 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Coronavirus
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Warning
@@ -107,9 +107,9 @@ fun ImageHistoryScreen(
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                Icon(imageVector = Icons.Filled.CameraAlt, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text(
-                    text = stringResource(R.string.image_history_fab_create_listing),
+                    text = stringResource(R.string.image_history_fab_scan_plant),
                     style = MaterialTheme.typography.labelLarge
                 )
             }

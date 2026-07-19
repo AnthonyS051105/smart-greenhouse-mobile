@@ -55,7 +55,21 @@ fun GreenhouseNavGraph(
     // Navigation Compose untuk bottom nav agar back stack tiap tab tersimpan
     // (popUpTo start + saveState/restoreState).
     val onBuyerBottomNavigate: (String) -> Unit = { route ->
-        if (route in BUYER_BOTTOM_NAV_DESTINATIONS) {
+        if (route == Routes.BUYER_MARKETPLACE) {
+            // "navigate(X){ popUpTo(X){saveState=true}; restoreState=true }" ke diri sendiri
+            // (X == X) — dan juga popBackStack(X) ke entry yang sudah ada — keduanya terbukti
+            // tidak reliable di sini: back stack berubah tapi NavHost tidak memicu perpindahan
+            // tampilan (bug: tombol "Kembali ke Beranda" & tab "Pasar" tidak berpindah layar).
+            // Solusi paling pasti: hapus TOTAL entry Marketplace lama (inclusive = true) lalu
+            // push instance BARU — pola sama persis dengan navigate(BUYER_MARKETPLACE){
+            // popUpTo(LOGIN){inclusive=true} } saat login yang sudah terbukti selalu berhasil.
+            // Konsekuensi: state lokal Marketplace (search/filter) ikut ter-reset setiap kembali
+            // ke tab ini — dapat diterima karena datanya masih sampel statis.
+            navController.navigate(Routes.BUYER_MARKETPLACE) {
+                popUpTo(Routes.BUYER_MARKETPLACE) { inclusive = true }
+                launchSingleTop = true
+            }
+        } else if (route in BUYER_BOTTOM_NAV_DESTINATIONS) {
             navController.navigate(route) {
                 popUpTo(Routes.BUYER_MARKETPLACE) { saveState = true }
                 launchSingleTop = true
@@ -273,13 +287,9 @@ fun GreenhouseNavGraph(
                         navController.navigate(Routes.buyerDetail(listingId))
                     }
                 },
-                onSeeAllClick = {
-                    navController.navigate(Routes.BUYER_MARKETPLACE) {
-                        popUpTo(Routes.BUYER_MARKETPLACE) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
+                // Sama seperti tab "Pasar" di BuyerBottomNavBar — pakai handler yang sama
+                // (popBackStack ke Marketplace) alih-alih navigate+popUpTo ke diri sendiri.
+                onSeeAllClick = { onBuyerBottomNavigate(Routes.BUYER_MARKETPLACE) },
                 onBottomNavigate = onBuyerBottomNavigate
             )
         }

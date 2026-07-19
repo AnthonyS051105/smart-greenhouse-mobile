@@ -23,7 +23,7 @@ fun CheckoutRoute(
     // pola di ListingDetailRoute.
     val listing = sampleListingDetails[listingId] ?: sampleListingDetails.values.first()
 
-    var quantity by remember(listingId) { mutableStateOf(listing.minOrderKg.roundToInt().coerceAtLeast(1)) }
+    var quantity by remember(listingId) { mutableStateOf(1) }
     var deliveryMethod by remember(listingId) { mutableStateOf(DeliveryMethod.PICKUP) }
     var address by remember(listingId) { mutableStateOf("") }
 
@@ -35,8 +35,7 @@ fun CheckoutRoute(
             quantity = (quantity + 1).coerceAtMost(max)
         },
         onDecreaseQuantity = {
-            val min = listing.minOrderKg.roundToInt()
-            quantity = (quantity - 1).coerceAtLeast(min)
+            quantity = (quantity - 1).coerceAtLeast(1)
         },
         deliveryMethod = deliveryMethod,
         onDeliveryMethodChange = { deliveryMethod = it },

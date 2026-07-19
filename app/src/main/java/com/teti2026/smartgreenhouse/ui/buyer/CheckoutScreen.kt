@@ -66,6 +66,11 @@ enum class DeliveryMethod {
 private const val CHECKOUT_SERVICE_FEE_RUPIAH = 2_000L
 private const val CHECKOUT_SHIPPING_COST_RUPIAH = 10_000L
 
+// Kuantitas default & batas bawah stepper = 1 (bukan minOrderKg listing) — minOrderKg tetap
+// dipakai sebagai info di Detail Produk, tapi di Checkout stepper mulai dari 1 seperti pola
+// e-commerce umum.
+private const val MIN_QUANTITY = 1
+
 /**
  * Layar "Checkout - Pembeli" dari Stitch. Stateless: seluruh data & event di-hoist ke caller
  * (nantinya CheckoutViewModel + FirestoreRepository.createOrder, lihat `docs/SDD.md §4.2/§5`).
@@ -106,7 +111,7 @@ fun CheckoutScreen(
             CheckoutItemSection(
                 listing = listing,
                 quantity = quantity,
-                canDecrease = quantity > listing.minOrderKg.roundToInt(),
+                canDecrease = quantity > MIN_QUANTITY,
                 canIncrease = quantity < listing.quantityAvailableKg.roundToInt(),
                 onDecreaseQuantity = onDecreaseQuantity,
                 onIncreaseQuantity = onIncreaseQuantity

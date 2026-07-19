@@ -127,6 +127,35 @@
     <string name="dashboard_actuator_ventilation">Ventilasi (Auto)</string>
     <string name="dashboard_actuator_last_active">Terakhir aktif: %1$s</string>
     <string name="dashboard_actuator_off">Mati</string>
+
+    <!-- Kontrol Irigasi / Kontrol Ventilasi - Petani (ModalBottomSheet dari section Aktuator) -->
+    <string name="actuator_control_mode_automatic">Otomatis</string>
+    <string name="actuator_control_mode_manual">Manual</string>
+    <string name="actuator_control_turn_on">HIDUPKAN</string>
+    <string name="actuator_control_turn_off">MATIKAN</string>
+    <string name="actuator_control_status_current">Status Saat Ini</string>
+    <string name="actuator_control_manual_warning">Mode otomatis AI akan dinonaktifkan sementara.</string>
+    <string name="actuator_control_manual_badge">Mode AI Nonaktif</string>
+    <string name="actuator_control_manual_dialog_title">Mode AI Nonaktif</string>
+    <string name="actuator_control_manual_dialog_message">Kamu sedang dalam mode Manual, jadi sistem AI otomatis tidak mengontrol aktuator ini untuk sementara. Kembali ke mode Otomatis agar AI mengambil alih lagi.</string>
+    <string name="actuator_control_manual_dialog_confirm">Mengerti</string>
+
+    <string name="irrigation_control_title">Kontrol Irigasi</string>
+    <string name="irrigation_control_status_active">Irigasi aktif</string>
+    <string name="irrigation_control_status_inactive">Irigasi tidak aktif</string>
+    <string name="irrigation_control_power_hint">Tekan untuk memulai penyiraman manual</string>
+    <string name="irrigation_control_active_since">Aktif sejak %1$s (AI)</string>
+    <string name="irrigation_control_spec_flow_label">Debit Air</string>
+    <string name="irrigation_control_spec_flow_unit">L/menit</string>
+    <string name="irrigation_control_spec_last_duration_label">Durasi Terakhir</string>
+    <string name="irrigation_control_spec_last_duration_unit">menit</string>
+
+    <string name="ventilation_control_title">Kontrol Ventilasi</string>
+    <string name="ventilation_control_active_since">Aktif sejak %1$s (AI)</string>
+    <string name="ventilation_control_spec_speed_label">Kecepatan Saat Ini</string>
+    <string name="ventilation_control_spec_speed_unit">RPM</string>
+    <string name="ventilation_control_spec_target_temp_label">Target Suhu</string>
+    <string name="ventilation_control_spec_target_temp_unit">°C</string>
     <string name="dashboard_shortcut_image_history_title">Riwayat Citra &amp; Skor AI</string>
     <string name="dashboard_shortcut_image_history_subtitle">Lihat detail analisis</string>
     <string name="dashboard_shortcut_content_description">Buka %1$s</string>

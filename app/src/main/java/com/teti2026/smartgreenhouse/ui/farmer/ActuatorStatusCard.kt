@@ -1,5 +1,6 @@
 package com.teti2026.smartgreenhouse.ui.farmer
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,11 +27,16 @@ import com.teti2026.smartgreenhouse.R
  * presentasi status terkini (`irrigation_state`/`ventilation_state`, `docs/data-contracts.md
  * §1.3`) — perubahan sungguhan lewat [onToggle] akan memanggil `POST /irrigation/trigger`
  * (override manual, `docs/Architecture.md §3`), bukan langsung menulis state lokal.
+ *
+ * Menekan baris (di luar area [Switch]) memanggil [onItemClick], yang membuka layar Kontrol
+ * Irigasi/Ventilasi (`ui/farmer/control/`) sebagai `ModalBottomSheet` sesuai aktuatornya —
+ * lihat [com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute].
  */
 @Composable
 fun ActuatorStatusCard(
     items: List<ActuatorStatusItem>,
     onToggle: (ActuatorStatusItem) -> Unit,
+    onItemClick: (ActuatorStatusItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -48,7 +54,11 @@ fun ActuatorStatusCard(
             )
 
             items.forEachIndexed { index, item ->
-                ActuatorRow(item = item, onToggle = { onToggle(item) })
+                ActuatorRow(
+                    item = item,
+                    onToggle = { onToggle(item) },
+                    onClick = { onItemClick(item) }
+                )
                 if (index != items.lastIndex) {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
@@ -64,10 +74,13 @@ fun ActuatorStatusCard(
 private fun ActuatorRow(
     item: ActuatorStatusItem,
     onToggle: () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

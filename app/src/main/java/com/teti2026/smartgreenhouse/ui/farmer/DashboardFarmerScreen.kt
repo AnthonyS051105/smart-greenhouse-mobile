@@ -68,6 +68,7 @@ fun DashboardFarmerScreen(
     harvestCountdownDays: Int,
     actuatorItems: List<ActuatorStatusItem>,
     onActuatorToggle: (ActuatorStatusItem) -> Unit,
+    onActuatorItemClick: (ActuatorStatusItem) -> Unit,
     imageHistoryThumbnailUrl: String,
     onImageHistoryClick: () -> Unit,
     onNotificationsClick: () -> Unit,
@@ -132,7 +133,8 @@ fun DashboardFarmerScreen(
             item {
                 ActuatorStatusCard(
                     items = actuatorItems,
-                    onToggle = onActuatorToggle
+                    onToggle = onActuatorToggle,
+                    onItemClick = onActuatorItemClick
                 )
             }
 
@@ -347,6 +349,7 @@ private fun DashboardFarmerScreenPreview() {
             onActuatorToggle = { toggled ->
                 actuators = actuators.map { if (it.labelRes == toggled.labelRes) it.copy(isOn = !it.isOn) else it }
             },
+            onActuatorItemClick = {},
             imageHistoryThumbnailUrl = sampleImageHistoryThumbnailUrl,
             onImageHistoryClick = {},
             onNotificationsClick = {},

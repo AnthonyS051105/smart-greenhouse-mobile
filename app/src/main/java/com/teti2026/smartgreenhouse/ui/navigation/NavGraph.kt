@@ -20,6 +20,7 @@ import com.teti2026.smartgreenhouse.ui.buyer.NotificationRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderHistoryRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderSuccessRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderStatus
+import com.teti2026.smartgreenhouse.ui.buyer.ProfileBuyerRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ReviewRoute
 import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
@@ -36,7 +37,8 @@ import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupLocationRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupPairingRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.rememberGreenhouseSetupStateHolder
 
-private val BUYER_BOTTOM_NAV_DESTINATIONS = setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP, Routes.BUYER_ORDERS)
+private val BUYER_BOTTOM_NAV_DESTINATIONS =
+    setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP, Routes.BUYER_ORDERS, Routes.BUYER_PROFILE)
 private val FARMER_BOTTOM_NAV_DESTINATIONS =
     setOf(Routes.FARMER_DASHBOARD, Routes.FARMER_IMAGE_HISTORY, Routes.FARMER_CHAT, Routes.FARMER_PROFILE)
 
@@ -49,7 +51,7 @@ private val FARMER_BOTTOM_NAV_DESTINATIONS =
 fun GreenhouseNavGraph(
     navController: NavHostController = rememberNavController()
 ) {
-    // Handler bersama tab bawah App Pembeli (Pasar <-> Peta <-> Pesanan): pola standar
+    // Handler bersama tab bawah App Pembeli (Pasar <-> Peta <-> Pesanan <-> Profil): pola standar
     // Navigation Compose untuk bottom nav agar back stack tiap tab tersimpan
     // (popUpTo start + saveState/restoreState).
     val onBuyerBottomNavigate: (String) -> Unit = { route ->
@@ -60,7 +62,6 @@ fun GreenhouseNavGraph(
                 restoreState = true
             }
         }
-        // TODO: tab Profil belum punya destination.
     }
 
     // Sama seperti [onBuyerBottomNavigate], untuk tab bawah App Petani. Dashboard, Riwayat,
@@ -368,6 +369,23 @@ fun GreenhouseNavGraph(
                     // kembali. Untuk sekarang langsung kembali ke Riwayat Pesanan.
                     navController.popBackStack()
                 }
+            )
+        }
+        composable(Routes.BUYER_PROFILE) {
+            ProfileBuyerRoute(
+                // Riwayat Pesanan & Marketplace/Peta adalah tab bottom-nav lain — pakai handler
+                // yang sama agar back stack tab konsisten (popUpTo start + saveState/restoreState).
+                onOrdersClick = { onBuyerBottomNavigate(Routes.BUYER_ORDERS) },
+                onNotificationsClick = { navController.navigate(Routes.BUYER_NOTIFICATIONS) },
+                // "Keluar" (setelah konfirmasi dialog "Ya" di ProfileBuyerScreen): kembali ke Login,
+                // seluruh back stack App Pembeli dibersihkan — pola sama seperti onLogoutClick
+                // ProfileFarmerRoute di atas.
+                onLogoutConfirmed = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                },
+                onBottomNavigate = onBuyerBottomNavigate
             )
         }
     }

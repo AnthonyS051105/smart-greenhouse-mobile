@@ -3,9 +3,10 @@ package com.teti2026.smartgreenhouse.ui.navigation
 /**
  * Route id NavHost, sesuai peta navigasi di `docs/SDD.md §6`.
  * LOGIN, BUYER_MARKETPLACE, BUYER_MAP, BUYER_DETAIL, BUYER_CHAT, BUYER_CHECKOUT,
- * BUYER_ORDER_SUCCESS, BUYER_ORDERS, BUYER_REVIEW, FARMER_DASHBOARD, FARMER_PROFILE,
- * FARMER_SETUP_GREENHOUSE_*, FARMER_CREATE_LISTING & FARMER_IMAGE_HISTORY yang punya destination
- * — sisanya menyusul per screen dibuat. Detail Analisis Citra BUKAN destination NavHost (lihat
+ * BUYER_ORDER_SUCCESS, BUYER_ORDERS, BUYER_REVIEW, BUYER_NOTIFICATIONS, BUYER_PROFILE,
+ * FARMER_DASHBOARD, FARMER_PROFILE, FARMER_SETUP_GREENHOUSE_*, FARMER_CREATE_LISTING &
+ * FARMER_IMAGE_HISTORY yang punya destination — sisanya menyusul per screen dibuat. Detail
+ * Analisis Citra BUKAN destination NavHost (lihat
  * `ImageHistoryRoute` — dirender sebagai overlay `ModalBottomSheet` di atas Riwayat Citra).
  */
 object Routes {
@@ -49,6 +50,9 @@ object Routes {
     const val BUYER_ORDER_SUCCESS = "buyer/order-success/{listingId}"
     const val BUYER_ORDERS = "buyer/orders"
     const val BUYER_REVIEW = "buyer/review/{orderId}"
+
+    // Tujuan tab "Profil" navbar Pembeli — padanan [FARMER_PROFILE] sisi Petani.
+    const val BUYER_PROFILE = "buyer/profile"
 
     // Tujuan tombol ikon lonceng (top bar Marketplace - Pembeli). Destination terpisah yang
     // di-push biasa (bukan tab bottom-nav persisten, padanan [BUYER_CHAT]/[BUYER_CHECKOUT]) —

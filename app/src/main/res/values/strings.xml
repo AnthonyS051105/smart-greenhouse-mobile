@@ -281,4 +281,26 @@
     <string name="notifications_title">Notifikasi</string>
     <string name="notifications_back_content_description">Kembali</string>
     <string name="notifications_empty">Belum ada notifikasi.</string>
+
+    <!-- Profil & Pengaturan - Pembeli -->
+    <string name="profile_buyer_title">Profil Saya</string>
+    <string name="profile_buyer_avatar_content_description">Foto profil pembeli</string>
+    <string name="profile_buyer_edit_avatar_content_description">Ubah foto profil</string>
+    <string name="profile_buyer_stat_orders_label">Total Pesanan</string>
+    <string name="profile_buyer_stat_favorites_label">Toko Favorit</string>
+    <string name="profile_buyer_group_account">Akun</string>
+    <string name="profile_buyer_menu_edit_profile">Edit Profil</string>
+    <string name="profile_buyer_menu_orders">Pesanan Saya</string>
+    <string name="profile_buyer_menu_saved_addresses">Alamat Tersimpan</string>
+    <string name="profile_buyer_menu_payment_methods">Metode Pembayaran</string>
+    <string name="profile_buyer_group_preferences">Preferensi</string>
+    <string name="profile_buyer_menu_language">Bahasa</string>
+    <string name="profile_buyer_menu_language_value">Indonesia</string>
+    <string name="profile_buyer_menu_notifications">Notifikasi</string>
+    <string name="profile_buyer_group_help">Bantuan</string>
+    <string name="profile_buyer_menu_help_center">Pusat Bantuan</string>
+    <string name="profile_buyer_menu_logout">Keluar</string>
+    <string name="profile_buyer_logout_dialog_title">Apakah anda yakin ingin keluar?</string>
+    <string name="profile_buyer_logout_dialog_confirm">Ya</string>
+    <string name="profile_buyer_logout_dialog_dismiss">Tidak</string>
 </resources>

@@ -4,7 +4,15 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -30,18 +38,21 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -65,9 +76,12 @@ import com.teti2026.smartgreenhouse.ui.navigation.Routes
 import com.teti2026.smartgreenhouse.ui.theme.SmartgreenhousemobileTheme
 import kotlinx.coroutines.launch
 
-private val MAP_DEFAULT_CENTER = LatLng(-7.8014, 110.3644)
-private const val MAP_DEFAULT_ZOOM = 13f
-private const val MAP_MY_LOCATION_ZOOM = 15f
+// internal (bukan private): dipakai ulang oleh FarmProductsMapScreen (screen "Produk Lahan - Peta")
+// agar kamera awal & level zoom konsisten dengan screen ini.
+internal val MAP_DEFAULT_CENTER = LatLng(-7.8014, 110.3644)
+internal const val MAP_DEFAULT_ZOOM = 13f
+internal const val MAP_MY_LOCATION_ZOOM = 15f
+internal const val MAP_FARM_FOCUS_ZOOM = 16f
 
 /**
  * Layar "Peta Marketplace - Pembeli" dari Stitch. Stateless: seluruh data & event di-hoist ke
@@ -134,7 +148,7 @@ fun MapScreen(
                             true
                         }
                     ) {
-                        FarmMapPin(contentDescription = stringResource(R.string.map_marker_content_description, farm.farmName))
+                        FarmMapMarker(contentDescription = stringResource(R.string.map_marker_content_description, farm.farmName))
                     }
                 }
             }
@@ -143,7 +157,7 @@ fun MapScreen(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
-                    .padding(top = 24.dp, start = 20.dp, end = 20.dp)
+                    .padding(top = 16.dp, start = 20.dp, end = 20.dp)
             ) {
                 MapSearchBar(query = searchQuery, onQueryChange = onSearchQueryChange)
                 MapQuickFilterRow(
@@ -197,38 +211,90 @@ private fun recenterToLastKnownLocation(context: Context, onLocationFound: (LatL
     }
 }
 
+/**
+ * Marker kebun di peta — gaya lingkaran (bukan pin+ekor) mengikuti mockup Stitch "Peta
+ * Marketplace": [selected] = kebun yang sedang difokuskan (dipakai `FarmProductsMapScreen` untuk
+ * satu-satunya marker relevan di screen itu — lingkaran besar terisi penuh + cincin berdenyut,
+ * padanan `.animate-ping`), state default (dipakai `MapScreen` untuk seluruh kebun terdekat,
+ * belum ada yang "difokuskan") = cincin kosong bg putih. Internal (bukan private) — dipakai ulang
+ * oleh `FarmProductsMapScreen` di file lain, package yang sama.
+ */
 @Composable
-private fun FarmMapPin(contentDescription: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(color = MaterialTheme.colorScheme.primary, shape = CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Eco,
-                contentDescription = contentDescription,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(22.dp)
+internal fun FarmMapMarker(
+    contentDescription: String,
+    selected: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        if (selected) {
+            val pulseTransition = rememberInfiniteTransition(label = "farmMarkerPulse")
+            val pulseScale by pulseTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.8f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 1200, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "farmMarkerPulseScale"
             )
-        }
-        Box(
-            modifier = Modifier
-                .size(width = 12.dp, height = 8.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)
+            val pulseAlpha by pulseTransition.animateFloat(
+                initialValue = 0.3f,
+                targetValue = 0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 1200, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "farmMarkerPulseAlpha"
+            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .graphicsLayer(scaleX = pulseScale, scaleY = pulseScale, alpha = pulseAlpha)
+                    .background(color = MaterialTheme.colorScheme.primaryContainer, shape = CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(color = MaterialTheme.colorScheme.primaryContainer, shape = CircleShape)
+                    .border(width = 2.dp, color = MaterialTheme.colorScheme.surface, shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Eco,
+                    contentDescription = contentDescription,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp)
                 )
-        )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(color = MaterialTheme.colorScheme.surface, shape = CircleShape)
+                    .border(width = 2.dp, color = MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Eco,
+                    contentDescription = contentDescription,
+                    tint = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
     }
 }
 
+/**
+ * internal (bukan private) — dipakai ulang oleh [FarmProductsMapScreen] sebagai dasar gaya top
+ * bar (pill mengambang semi-transparan) walau kontennya diganti tombol back + nama kebun,
+ * bukan input pencarian. Warna [MaterialTheme.colorScheme.surface] diberi alpha 0.92f (bukan
+ * blur sungguhan — `RenderEffect` backdrop-blur baru tersedia API 31+, sementara `minSdk` app ini
+ * 24, lihat `mobile/docs/SRS.md MOB-NFR-04`) untuk mendekati efek "bg-surface/90 backdrop-blur"
+ * pada mockup Stitch tanpa melanggar kompatibilitas versi minimum.
+ */
 @Composable
-private fun MapSearchBar(
+internal fun MapSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -238,8 +304,8 @@ private fun MapSearchBar(
             .fillMaxWidth()
             .height(56.dp),
         shape = RoundedCornerShape(percent = 50),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+        shadowElevation = 1.dp
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             Icon(
@@ -309,6 +375,9 @@ private fun MapQuickFilterRow(
     }
 }
 
+// shadowElevation 1dp — disamakan dengan elemen chrome mengambang lain (MapSearchBar,
+// FarmProductsTopBar, MapQuickFilterRow) agar seluruh floating UI di kedua screen Peta
+// terlihat konsisten satu level ketinggian.
 @Composable
 private fun MyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
@@ -316,7 +385,7 @@ private fun MyLocationButton(onClick: () -> Unit, modifier: Modifier = Modifier)
         modifier = modifier.size(48.dp),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 2.dp
+        shadowElevation = 1.dp
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Icon(
@@ -352,51 +421,66 @@ private fun NearbyFarmsBottomSheet(
                         .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(percent = 50))
                 )
             }
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)
-            ) {
-                Column {
-                    Text(
-                        text = stringResource(R.string.map_bottom_sheet_title),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(R.string.map_bottom_sheet_subtitle, farms.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                TextButton(onClick = onSeeAllClick) {
-                    Text(
-                        text = stringResource(R.string.map_see_all_button),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)) {
+                Text(
+                    text = stringResource(R.string.map_bottom_sheet_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = stringResource(R.string.map_bottom_sheet_subtitle, farms.size),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 items(farms, key = { it.id }) { farm ->
                     NearbyFarmCard(farm = farm, onClick = { onFarmClick(farm.id) })
                 }
             }
+            // Tombol "Lihat Semua Produk" — gaya pill primer penuh-lebar disamakan PERSIS dengan
+            // tombol CTA FarmProductsBottomSheet (FarmProductsMapScreen.kt, screen "Produk Lahan -
+            // Peta"), dipindah dari TextButton kecil di header ke posisi bawah (sama seperti
+            // Screen 2) — bukan lagi tombol teks kecil bersisian dengan judul.
+            Button(
+                onClick = onSeeAllClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 20.dp)
+                    .height(52.dp),
+                shape = RoundedCornerShape(percent = 50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text(
+                    text = stringResource(R.string.map_see_all_button),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
         }
     }
 }
 
+// Gaya kartu (radius 12dp, warna surfaceContainerLow, border tipis, shadow 1dp) disamakan persis
+// dengan FarmProductMiniCard (FarmProductsMapScreen.kt, screen "Produk Lahan - Peta") — sebelumnya
+// beda (radius 16dp, surfaceContainerLowest, tanpa border/shadow) sehingga kedua screen Peta
+// terlihat seperti dua design system berbeda. Lebar diubah dari widthIn(max=280dp) (variabel,
+// menyusut sesuai konten) ke width tetap 200dp agar seluruh kartu di LazyRow seragam lebarnya.
 @Composable
 private fun NearbyFarmCard(farm: MapFarmItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
-        modifier = modifier.widthIn(max = 280.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        shadowElevation = 0.dp
+        modifier = modifier.width(200.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        shadowElevation = 1.dp
     ) {
         Column {
             Box(modifier = Modifier.fillMaxWidth().height(128.dp)) {

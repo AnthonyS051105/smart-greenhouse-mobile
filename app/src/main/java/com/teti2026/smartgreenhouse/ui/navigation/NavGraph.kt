@@ -19,6 +19,7 @@ import com.teti2026.smartgreenhouse.ui.auth.LoginRegisterRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ChatListBuyerRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ChatRoute
 import com.teti2026.smartgreenhouse.ui.buyer.CheckoutRoute
+import com.teti2026.smartgreenhouse.ui.buyer.FarmProductsMapRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MapRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MarketplaceRoute
@@ -28,7 +29,6 @@ import com.teti2026.smartgreenhouse.ui.buyer.OrderSuccessRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderStatus
 import com.teti2026.smartgreenhouse.ui.buyer.ProfileBuyerRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ReviewRoute
-import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.NotificationFarmerRoute
@@ -352,17 +352,29 @@ fun GreenhouseNavGraph(
         }
         composable(Routes.BUYER_MAP) {
             MapRoute(
-                // Kartu kebun belum punya daftar komoditas sendiri (lihat catatan di
-                // MapFarmItem.primaryListingId) — tap kartu langsung ke listing utama farm itu.
-                onFarmClick = { farmId ->
-                    val listingId = sampleNearbyFarms.firstOrNull { it.id == farmId }?.primaryListingId
-                    if (listingId != null) {
-                        navController.navigate(Routes.buyerDetail(listingId))
-                    }
-                },
+                // Tap kartu/marker kebun → screen "Produk Lahan" (menampilkan SELURUH produk
+                // kebun itu), bukan lagi langsung ke satu listing utama (lihat catatan di
+                // MapFarmItem & Routes.BUYER_FARM_PRODUCTS).
+                onFarmClick = { farmId -> navController.navigate(Routes.buyerFarmProducts(farmId)) },
                 // Sama seperti tab "Pasar" di BuyerBottomNavBar — pakai handler yang sama
                 // (popBackStack ke Marketplace) alih-alih navigate+popUpTo ke diri sendiri.
                 onSeeAllClick = { onBuyerBottomNavigate(Routes.BUYER_MARKETPLACE) },
+                onBottomNavigate = onBuyerBottomNavigate
+            )
+        }
+        composable(
+            route = Routes.BUYER_FARM_PRODUCTS,
+            arguments = listOf(navArgument("farmId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val farmId = backStackEntry.arguments?.getString("farmId").orEmpty()
+            FarmProductsMapRoute(
+                farmId = farmId,
+                onBackClick = { navController.popBackStack() },
+                onProductClick = { listingId -> navController.navigate(Routes.buyerDetail(listingId)) },
+                // Bottom sheet sudah menampilkan seluruh produk kebun ini (belum ada paginasi di
+                // data sampel) — tap tombol belum melakukan apa-apa, menyusul saat screen "Semua
+                // Produk Kebun" (grid penuh) dibuat, sama seperti pola TODO no-op lain di app ini.
+                onSeeAllProductsClick = {},
                 onBottomNavigate = onBuyerBottomNavigate
             )
         }

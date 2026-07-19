@@ -15,9 +15,14 @@ import com.teti2026.smartgreenhouse.ui.components.SensorChartPoint
  * [pricePerKg]/[quantityAvailableKg]/[minOrderKg] adalah versi angka mentah dari `price_per_kg`/
  * `quantity_kg` (`data-contracts.md §3.7`) — dipakai untuk hitung subtotal di Checkout (MOB-T21),
  * berdampingan dengan versi *Label yang sudah diformat untuk tampilan.
+ *
+ * [farmId] — padanan `listings.farm_id` (`data-contracts.md §3.7`), dipakai [listingsForFarm]
+ * untuk menampilkan seluruh produk satu kebun di screen "Produk Lahan - Peta" (lihat
+ * `FarmProductsMapScreen`), dijangkau dari tap kebun di `MapScreen`.
  */
 data class ListingDetailItem(
     val id: String,
+    val farmId: String,
     val cropName: String,
     val locationLabel: String,
     val harvestLabel: String,
@@ -50,6 +55,7 @@ data class ListingDetailItem(
 val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
     ListingDetailItem(
         id = "listing-cabai-rawit-1",
+        farmId = "farm-pak-budi",
         cropName = "Cabai Rawit Merah",
         locationLabel = "Boyolali, Jawa Tengah",
         harvestLabel = "Panen Hari Ini",
@@ -83,6 +89,7 @@ val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
     ),
     ListingDetailItem(
         id = "listing-tomat-1",
+        farmId = "farm-agro-sejahtera",
         cropName = "Tomat Merah Segar",
         locationLabel = "Sleman, Yogyakarta",
         harvestLabel = "Panen 1 Hari Lalu",
@@ -114,6 +121,7 @@ val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
     ),
     ListingDetailItem(
         id = "listing-bayam-1",
+        farmId = "farm-hidroponik-lestari",
         cropName = "Bayam Cabut Organik",
         locationLabel = "Bantul, Yogyakarta",
         harvestLabel = "Panen 2 Hari Lalu",
@@ -144,7 +152,10 @@ val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
         sellerActivityLabel = "Aktif 3 hari lalu"
     ),
     ListingDetailItem(
+        // Sengaja farmId = "farm-pak-budi" (sama dengan listing-cabai-rawit-1) — demo kebun dengan
+        // >1 produk untuk screen "Produk Lahan - Peta" (lihat listingsForFarm di bawah).
         id = "listing-paprika-1",
+        farmId = "farm-pak-budi",
         cropName = "Paprika Hijau Besar",
         locationLabel = "Magelang, Jawa Tengah",
         harvestLabel = "Panen Hari Ini",
@@ -177,3 +188,11 @@ val sampleListingDetails: Map<String, ListingDetailItem> = listOf(
         sellerActivityLabel = "Aktif 5 jam lalu"
     )
 ).associateBy { it.id }
+
+/**
+ * Seluruh listing milik satu farm, dipakai screen "Produk Lahan - Peta" (`FarmProductsMapScreen`).
+ * Padanan sementara query `FirestoreRepository.getListings(filter = farmId)` — akan diganti begitu
+ * MOB-T17/T19 dikerjakan.
+ */
+fun listingsForFarm(farmId: String): List<ListingDetailItem> =
+    sampleListingDetails.values.filter { it.farmId == farmId }

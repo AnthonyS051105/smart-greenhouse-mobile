@@ -58,6 +58,12 @@ object Routes {
     // Pembeli
     const val BUYER_MARKETPLACE = "buyer/marketplace"
     const val BUYER_MAP = "buyer/map"
+
+    // Tujuan tap kebun (kartu bottom sheet atau marker) di Peta Marketplace — menampilkan SELURUH
+    // produk kebun tersebut (lihat `FarmProductsMapScreen`), bukan lagi langsung ke satu listing
+    // (padanan `primaryListingId` lama yang sudah dihapus dari `MapFarmItem`).
+    const val BUYER_FARM_PRODUCTS = "buyer/map/farm/{farmId}"
+
     const val BUYER_DETAIL = "buyer/listing/{listingId}"
     const val BUYER_CHAT = "buyer/chat/{listingId}"
     const val BUYER_CHECKOUT = "buyer/checkout/{listingId}"
@@ -80,6 +86,9 @@ object Routes {
     // BuyerBottomNavBar tetap ditampilkan di layar ini (permintaan user) tapi tidak ada item
     // yang aktif karena Notifikasi bukan salah satu dari 4 tab tersebut.
     const val BUYER_NOTIFICATIONS = "buyer/notifications"
+
+    /** Bangun route [BUYER_FARM_PRODUCTS] konkret untuk navigasi ke produk satu kebun tertentu. */
+    fun buyerFarmProducts(farmId: String) = "buyer/map/farm/$farmId"
 
     /** Bangun route [BUYER_DETAIL] konkret untuk navigasi ke listing tertentu. */
     fun buyerDetail(listingId: String) = "buyer/listing/$listingId"

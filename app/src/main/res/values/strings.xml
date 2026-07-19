@@ -34,6 +34,12 @@
     <string name="map_rating_content_description">Rating %1$s</string>
     <string name="map_farm_image_placeholder_content_description">Belum ada foto kebun</string>
 
+    <!-- Produk Lahan - Peta (Pembeli) -->
+    <string name="farm_products_back_content_description">Kembali ke Peta Marketplace</string>
+    <string name="farm_products_location_distance_format">%1$s • %2$s</string>
+    <string name="farm_products_cta_see_all">Lihat Semua Produk</string>
+    <string name="farm_products_image_placeholder_content_description">Belum ada foto produk</string>
+
     <!-- Detail Produk - Pembeli -->
     <string name="listing_detail_back_content_description">Kembali</string>
     <string name="listing_detail_share_content_description">Bagikan produk</string>

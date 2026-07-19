@@ -2,9 +2,10 @@ package com.teti2026.smartgreenhouse.ui.farmer
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
-import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.WbSunny
 import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.ui.components.SensorChartPoint
 
@@ -29,18 +30,18 @@ val sampleSensorItems = listOf(
         levelFraction = 0.65f
     ),
     DashboardSensorItem(
-        labelRes = R.string.dashboard_sensor_pressure,
-        valueText = "1013",
-        unitText = "hPa",
-        icon = Icons.Filled.Speed,
-        levelFraction = 0.8f
+        labelRes = R.string.dashboard_sensor_soil_moisture,
+        valueText = "45",
+        unitText = "%",
+        icon = Icons.Filled.Grass,
+        levelFraction = 0.45f
     ),
     DashboardSensorItem(
-        labelRes = R.string.dashboard_sensor_gas,
-        valueText = "145",
-        unitText = "ppm",
-        icon = Icons.Filled.Air,
-        levelFraction = 0.3f
+        labelRes = R.string.dashboard_sensor_light,
+        valueText = "850",
+        unitText = "lux",
+        icon = Icons.Filled.WbSunny,
+        levelFraction = 0.6f
     )
 )
 

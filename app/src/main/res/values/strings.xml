@@ -115,9 +115,9 @@
     <string name="dashboard_health_score_title">Skor Kesehatan Lahan</string>
     <string name="dashboard_health_score_trend">%1$s vs bulan lalu</string>
     <string name="dashboard_sensor_temperature">Suhu</string>
-    <string name="dashboard_sensor_humidity">Kelembapan</string>
-    <string name="dashboard_sensor_pressure">Tekanan</string>
-    <string name="dashboard_sensor_gas">Kadar Gas</string>
+    <string name="dashboard_sensor_humidity">Kelembapan Udara</string>
+    <string name="dashboard_sensor_soil_moisture">Kelembapan Tanah</string>
+    <string name="dashboard_sensor_light">Intensitas Cahaya</string>
     <string name="dashboard_chart_title">Tren Historis</string>
     <string name="dashboard_harvest_schedule_title">Jadwal Panen</string>
     <string name="dashboard_harvest_estimate">Estimasi %1$s</string>
@@ -266,7 +266,7 @@
     <string name="image_history_filter_sick">Sakit</string>
     <string name="image_history_filter_this_week">Minggu Ini</string>
     <string name="image_history_category_sick">Sakit</string>
-    <string name="image_history_fab_create_listing">Buat Listing</string>
+    <string name="image_history_fab_scan_plant">Pindai Tanaman</string>
 
     <!-- Detail Analisis Citra - AgriSmart -->
     <string name="image_analysis_category_healthy">Sehat</string>
@@ -303,4 +303,31 @@
     <string name="profile_buyer_logout_dialog_title">Apakah anda yakin ingin keluar?</string>
     <string name="profile_buyer_logout_dialog_confirm">Ya</string>
     <string name="profile_buyer_logout_dialog_dismiss">Tidak</string>
+
+    <!-- Pindai Tanaman - Viewfinder -->
+    <string name="scan_viewfinder_title">Pindai Tanaman</string>
+    <string name="scan_viewfinder_close_content_description">Tutup</string>
+    <string name="scan_viewfinder_flash_content_description">Nyalakan/matikan lampu kilat</string>
+    <string name="scan_viewfinder_instruction">Posisikan daun/buah cabai dalam kotak</string>
+    <string name="scan_viewfinder_lighting_hint">Pastikan pencahayaan cukup</string>
+    <string name="scan_viewfinder_gallery_content_description">Pilih dari galeri</string>
+    <string name="scan_viewfinder_switch_camera_content_description">Ganti kamera</string>
+    <string name="scan_camera_permission_required">Izin kamera diperlukan untuk memindai tanaman. Aktifkan lewat pengaturan aplikasi.</string>
+
+    <!-- Pindai Tanaman - Menganalisis -->
+    <string name="scan_analyzing_title">Menganalisis citra…</string>
+    <string name="scan_analyzing_subtitle">AI sedang menilai kematangan &amp; kesehatan tanaman</string>
+
+    <!-- Pindai Tanaman - Hasil Analisis -->
+    <string name="scan_result_title">Hasil Analisis</string>
+    <string name="scan_result_back_content_description">Kembali</string>
+    <string name="scan_result_summary_title">Ringkasan Citra</string>
+    <string name="scan_result_ripeness_label">Tingkat Kematangan</string>
+    <string name="scan_result_health_label">Status Kesehatan</string>
+    <string name="scan_result_confidence_label">Tingkat keyakinan AI</string>
+    <string name="scan_result_confidence_value">%1$d%%</string>
+    <string name="scan_result_save_to_history_button">Simpan ke Riwayat Citra</string>
+    <string name="scan_result_create_listing_button">Buat Listing dari Hasil Ini</string>
+    <string name="scan_result_scan_again_button">Pindai Lagi</string>
+    <string name="scan_result_prefill_description">Tingkat kematangan %1$s, status kesehatan %2$s.</string>
 </resources>

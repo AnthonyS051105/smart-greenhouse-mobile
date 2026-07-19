@@ -32,6 +32,7 @@ private enum class OpenActuatorSheet { IRRIGATION, VENTILATION }
 @Composable
 fun DashboardFarmerRoute(
     onImageHistoryClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onBottomNavigate: (String) -> Unit = {}
 ) {
     var selectedChartTab by remember { mutableStateOf(CHART_TABS.first()) }
@@ -87,7 +88,7 @@ fun DashboardFarmerRoute(
             },
             imageHistoryThumbnailUrl = sampleImageHistoryThumbnailUrl,
             onImageHistoryClick = onImageHistoryClick,
-            onNotificationsClick = { /* TODO: navigasi ke layar Notifikasi */ },
+            onNotificationsClick = onNotificationsClick,
             currentBottomNavRoute = Routes.FARMER_DASHBOARD,
             onBottomNavigate = onBottomNavigate
         )

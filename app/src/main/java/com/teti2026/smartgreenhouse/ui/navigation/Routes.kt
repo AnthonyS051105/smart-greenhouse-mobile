@@ -33,6 +33,14 @@ object Routes {
     // sebagai ModalBottomSheet overlay di composable yang sama (bukan route terpisah).
     const val FARMER_IMAGE_HISTORY = "farmer/image-history"
 
+    // Tujuan tombol "Buat Listing" (FAB) di Riwayat Citra — pindaian tanaman on-demand lewat
+    // kamera HP (bukan siklus ESP32-CAM), untuk petani yang ingin cek health_score seketika saat
+    // melihat gejala penyakit. Flow 3 tahap (Viewfinder -> Menganalisis -> Hasil Analisis)
+    // dikelola sebagai satu state machine di ScanPlantRoute, BUKAN 3 destination NavHost terpisah
+    // (pola sama seperti alasan Detail Analisis Citra jadi ModalBottomSheet: transisi antar tahap
+    // di sini bersifat otomatis/berurutan, bukan navigasi bebas yang butuh back stack sendiri).
+    const val FARMER_SCAN_PLANT = "farmer/scan-plant"
+
     // Tujuan tab "Pesan" navbar Petani — daftar percakapan dengan pembeli. Chat negosiasi satu
     // percakapan adalah destination terpisah (bukan tab persisten), padanan [BUYER_CHAT].
     const val FARMER_CHAT = "farmer/chat"
@@ -40,6 +48,12 @@ object Routes {
 
     /** Bangun route [FARMER_CHAT_CONVERSATION] konkret untuk satu percakapan. */
     fun farmerChatConversation(conversationId: String) = "farmer/chat/$conversationId"
+
+    // Tujuan tombol ikon lonceng (top bar Dashboard/Pesan) & menu "Notifikasi" di Profil Petani.
+    // Destination terpisah yang di-push biasa (bukan tab bottom-nav persisten), padanan
+    // [BUYER_NOTIFICATIONS] — FarmerBottomNavBar tetap ditampilkan di layar ini tapi tidak ada
+    // item yang aktif karena Notifikasi bukan salah satu dari 5 tab tersebut.
+    const val FARMER_NOTIFICATIONS = "farmer/notifications"
 
     // Pembeli
     const val BUYER_MARKETPLACE = "buyer/marketplace"

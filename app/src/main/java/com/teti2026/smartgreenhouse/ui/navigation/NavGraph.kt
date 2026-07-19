@@ -2,13 +2,18 @@ package com.teti2026.smartgreenhouse.ui.navigation
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.data.model.UserRole
 import com.teti2026.smartgreenhouse.ui.auth.LoginRegisterRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ChatRoute
@@ -25,6 +30,7 @@ import com.teti2026.smartgreenhouse.ui.buyer.ReviewRoute
 import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
+import com.teti2026.smartgreenhouse.ui.farmer.NotificationFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.chat.ChatListRoute
 import com.teti2026.smartgreenhouse.ui.farmer.chat.FarmerChatRoute
@@ -32,6 +38,8 @@ import com.teti2026.smartgreenhouse.ui.farmer.history.ImageHistoryRoute
 import com.teti2026.smartgreenhouse.ui.farmer.history.sampleImageAnalysisDetails
 import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingFormState
 import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingRoute
+import com.teti2026.smartgreenhouse.ui.farmer.scan.ScanAnalysisResult
+import com.teti2026.smartgreenhouse.ui.farmer.scan.ScanPlantRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupDataRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupLocationRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupPairingRoute
@@ -51,6 +59,13 @@ private val FARMER_BOTTOM_NAV_DESTINATIONS =
 fun GreenhouseNavGraph(
     navController: NavHostController = rememberNavController()
 ) {
+    // Menampung hasil pindaian tanaman on-demand terakhir (ScanPlantRoute) untuk ditransfer ke
+    // Buat Listing — tidak lewat NavArgs karena ScanAnalysisResult bukan objek statis yang bisa
+    // di-resolve by-id (beda dari sampleImageAnalysisDetails). Cukup bertahan selama sesi
+    // navigasi (hilang saat proses mati), konsisten dengan seluruh state lain di app ini yang
+    // belum persisten (TODO: MOB-T09/T10 untuk penyimpanan sungguhan).
+    var lastScanResult by remember { mutableStateOf<ScanAnalysisResult?>(null) }
+
     // Handler bersama tab bawah App Pembeli (Pasar <-> Peta <-> Pesanan <-> Profil): pola standar
     // Navigation Compose untuk bottom nav agar back stack tiap tab tersimpan
     // (popUpTo start + saveState/restoreState).
@@ -84,7 +99,7 @@ fun GreenhouseNavGraph(
     // sendiri, sesuai desain Stitch "Buat Listing"), jadi di-push biasa lewat navigate() agar
     // kembali dengan back-stack normal, bukan tab-switch.
     val onFarmerBottomNavigate: (String) -> Unit = { route ->
-        if (route == Routes.FARMER_CREATE_LISTING_BASE) {
+        if (route == Routes.FARMER_CREATE_LISTING_BASE || route == Routes.FARMER_SCAN_PLANT) {
             navController.navigate(route)
         } else if (route in FARMER_BOTTOM_NAV_DESTINATIONS) {
             navController.navigate(route) {
@@ -128,6 +143,7 @@ fun GreenhouseNavGraph(
         composable(Routes.FARMER_DASHBOARD) {
             DashboardFarmerRoute(
                 onImageHistoryClick = { onFarmerBottomNavigate(Routes.FARMER_IMAGE_HISTORY) },
+                onNotificationsClick = { navController.navigate(Routes.FARMER_NOTIFICATIONS) },
                 onBottomNavigate = onFarmerBottomNavigate
             )
         }
@@ -146,9 +162,28 @@ fun GreenhouseNavGraph(
                     // (pola sama seperti resolve listingId/farmId di destination Pembeli).
                     navController.navigate(Routes.farmerCreateListingFromImage(selectedDetail.id))
                 },
-                onCreateListingClick = { navController.navigate(Routes.FARMER_CREATE_LISTING_BASE) },
+                // "Buat Listing" FAB di Riwayat Citra memicu pindaian tanaman on-demand lewat
+                // kamera HP (bukan langsung ke form Buat Listing kosong) — lihat diskusi sebelum
+                // fitur ini dibuat: petani ingin tahu health_score seketika tanpa menunggu siklus
+                // ESP32-CAM, mis. saat melihat gejala penyakit di lapangan.
+                onCreateListingClick = { navController.navigate(Routes.FARMER_SCAN_PLANT) },
                 onBackClick = { navController.popBackStack() },
                 onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        composable(Routes.FARMER_SCAN_PLANT) {
+            ScanPlantRoute(
+                onCloseClick = { navController.popBackStack() },
+                onSaveToHistoryClick = {
+                    // TODO: simpan CropImage ke Firestore via FirestoreRepository saat
+                    // MOB-T09/T10 dikerjakan (padanan hasil ESP32-CAM, tapi berasal dari kamera
+                    // HP). Untuk sekarang langsung kembali ke Riwayat Citra.
+                    navController.popBackStack()
+                },
+                onCreateListingClick = { result ->
+                    lastScanResult = result
+                    navController.navigate(Routes.FARMER_CREATE_LISTING_BASE)
+                }
             )
         }
         composable(Routes.FARMER_CHAT) {
@@ -156,6 +191,17 @@ fun GreenhouseNavGraph(
                 onConversationClick = { conversation ->
                     navController.navigate(Routes.farmerChatConversation(conversation.id))
                 },
+                onNotificationsClick = { navController.navigate(Routes.FARMER_NOTIFICATIONS) },
+                onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        composable(Routes.FARMER_NOTIFICATIONS) {
+            NotificationFarmerRoute(
+                onBackClick = { navController.popBackStack() },
+                // "" (bukan salah satu Routes.FARMER_* tab): lihat catatan di
+                // Routes.FARMER_NOTIFICATIONS & NotificationFarmerRoute — tidak ada item
+                // FarmerBottomNavBar yang tersorot aktif di sini.
+                currentBottomNavRoute = "",
                 onBottomNavigate = onFarmerBottomNavigate
             )
         }
@@ -176,6 +222,7 @@ fun GreenhouseNavGraph(
                 onMyGreenhousesClick = {
                     navController.navigate(Routes.FARMER_SETUP_GREENHOUSE_DATA)
                 },
+                onNotificationsClick = { navController.navigate(Routes.FARMER_NOTIFICATIONS) },
                 onLogoutClick = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
@@ -241,13 +288,33 @@ fun GreenhouseNavGraph(
             // masuk dari tombol "+" navbar biasa, form pakai data sampel default seperti semula.
             val prefillImageId = backStackEntry.arguments?.getString("prefillImageId")
             val prefillDetail = prefillImageId?.let { sampleImageAnalysisDetails[it] }
-            val initialFormState = prefillDetail?.let { detail ->
+            // [lastScanResult] terisi hanya saat masuk dari "Buat Listing dari Hasil Ini" di
+            // Pindai Tanaman — Hasil Analisis (lihat destination Routes.FARMER_SCAN_PLANT di
+            // atas). Diprioritaskan di atas [prefillDetail] karena keduanya tidak pernah terisi
+            // bersamaan (dua entry point berbeda ke Buat Listing), lalu di-reset supaya tidak
+            // ikut ter-prefill lagi saat kembali ke sini lewat jalur lain (mis. tombol "+").
+            val scanResult = lastScanResult
+            val initialFormState = if (scanResult != null) {
+                lastScanResult = null
                 CreateListingFormState(
-                    productName = detail.productName,
-                    healthScore = detail.healthScore,
-                    photoUris = listOf(Uri.parse(detail.imageUrl)),
-                    description = detail.aiNote
+                    productName = scanResult.productName,
+                    healthScore = scanResult.healthScore,
+                    photoUris = listOf(scanResult.imageUri),
+                    description = stringResource(
+                        R.string.scan_result_prefill_description,
+                        scanResult.ripenessLabel,
+                        scanResult.healthLabel
+                    )
                 )
+            } else {
+                prefillDetail?.let { detail ->
+                    CreateListingFormState(
+                        productName = detail.productName,
+                        healthScore = detail.healthScore,
+                        photoUris = listOf(Uri.parse(detail.imageUrl)),
+                        description = detail.aiNote
+                    )
+                }
             }
 
             CreateListingRoute(

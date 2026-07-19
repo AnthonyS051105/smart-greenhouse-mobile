@@ -49,7 +49,7 @@ Verifikasi / Login berhasil
 ### 3.2 Monitoring & Kontrol
 ```
 [Dashboard]
-   - Grafik real-time: suhu, kelembapan, tekanan (dari Firestore sensor_readings)
+   - Grafik real-time: suhu, kelembapan udara, kelembapan tanah, intensitas cahaya (dari Firestore sensor_readings)
    - Kartu status aktuator: Irigasi (ON/OFF, auto/manual), Ventilasi (...)
    - Notifikasi terbaru (mis. "Irigasi otomatis 3 mnt oleh AI")
    ↓ tap "Kontrol Manual"

@@ -50,6 +50,12 @@ object Routes {
     const val BUYER_ORDERS = "buyer/orders"
     const val BUYER_REVIEW = "buyer/review/{orderId}"
 
+    // Tujuan tombol ikon lonceng (top bar Marketplace - Pembeli). Destination terpisah yang
+    // di-push biasa (bukan tab bottom-nav persisten, padanan [BUYER_CHAT]/[BUYER_CHECKOUT]) —
+    // BuyerBottomNavBar tetap ditampilkan di layar ini (permintaan user) tapi tidak ada item
+    // yang aktif karena Notifikasi bukan salah satu dari 4 tab tersebut.
+    const val BUYER_NOTIFICATIONS = "buyer/notifications"
+
     /** Bangun route [BUYER_DETAIL] konkret untuk navigasi ke listing tertentu. */
     fun buyerDetail(listingId: String) = "buyer/listing/$listingId"
 

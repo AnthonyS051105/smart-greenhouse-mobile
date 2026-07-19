@@ -276,4 +276,9 @@
     <string name="image_analysis_device_label">Perangkat</string>
     <string name="image_analysis_create_listing_button">Buat Listing dari Data Ini</string>
     <string name="image_analysis_close_button">Tutup</string>
+
+    <!-- Notifikasi - AgriSmart -->
+    <string name="notifications_title">Notifikasi</string>
+    <string name="notifications_back_content_description">Kembali</string>
+    <string name="notifications_empty">Belum ada notifikasi.</string>
 </resources>

@@ -16,6 +16,7 @@ import com.teti2026.smartgreenhouse.ui.buyer.CheckoutRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MapRoute
 import com.teti2026.smartgreenhouse.ui.buyer.MarketplaceRoute
+import com.teti2026.smartgreenhouse.ui.buyer.NotificationRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderHistoryRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderSuccessRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderStatus
@@ -248,6 +249,16 @@ fun GreenhouseNavGraph(
         composable(Routes.BUYER_MARKETPLACE) {
             MarketplaceRoute(
                 onListingClick = { listingId -> navController.navigate(Routes.buyerDetail(listingId)) },
+                onNotificationsClick = { navController.navigate(Routes.BUYER_NOTIFICATIONS) },
+                onBottomNavigate = onBuyerBottomNavigate
+            )
+        }
+        composable(Routes.BUYER_NOTIFICATIONS) {
+            NotificationRoute(
+                onBackClick = { navController.popBackStack() },
+                // "" (bukan salah satu Routes.BUYER_* tab): lihat catatan di Routes.BUYER_NOTIFICATIONS
+                // & NotificationRoute — tidak ada item BuyerBottomNavBar yang tersorot aktif di sini.
+                currentBottomNavRoute = "",
                 onBottomNavigate = onBuyerBottomNavigate
             )
         }

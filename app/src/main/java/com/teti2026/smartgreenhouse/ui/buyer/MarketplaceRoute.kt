@@ -15,6 +15,7 @@ private val MARKETPLACE_FILTERS = listOf("Jenis", "Lokasi", "Harga", "Skor Min."
 @Composable
 fun MarketplaceRoute(
     onListingClick: (String) -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onBottomNavigate: (String) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -28,7 +29,7 @@ fun MarketplaceRoute(
         onFilterSelected = { selectedFilter = it },
         listings = sampleMarketplaceListings,
         onListingClick = onListingClick,
-        onNotificationsClick = { /* TODO: navigasi ke layar Notifikasi */ },
+        onNotificationsClick = onNotificationsClick,
         currentBottomNavRoute = Routes.BUYER_MARKETPLACE,
         onBottomNavigate = onBottomNavigate
     )

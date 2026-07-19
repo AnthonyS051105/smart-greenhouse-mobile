@@ -1,6 +1,10 @@
 package com.teti2026.smartgreenhouse.ui.farmer.setup
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** Route tipis langkah 1/3 — menghubungkan [GreenhouseSetupStateHolder] dengan [GreenhouseSetupDataScreen]. */
 @Composable
@@ -43,18 +47,35 @@ fun GreenhouseSetupLocationRoute(
     )
 }
 
-/** Route tipis langkah 3/3 — menghubungkan [GreenhouseSetupStateHolder] dengan [GreenhouseSetupPairingScreen]. */
+/**
+ * Route tipis langkah 3/3 — menghubungkan [GreenhouseSetupStateHolder] dengan
+ * [GreenhouseSetupPairingScreen]. [onFinishClick] (caller, NavGraph) dipanggil PERSIS SEKALI,
+ * hanya setelah [GreenhouseSetupStateHolder.submitState] menjadi [SetupSubmitState.Success]
+ * (dokumen farms+plots sudah tersimpan) — bukan langsung saat tombol ditekan.
+ */
 @Composable
 fun GreenhouseSetupPairingRoute(
     stateHolder: GreenhouseSetupStateHolder,
     onBackClick: () -> Unit,
     onFinishClick: () -> Unit
 ) {
+    val submitState by stateHolder.submitState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(submitState) {
+        if (submitState is SetupSubmitState.Success) {
+            onFinishClick()
+        }
+    }
+
+    val errorMessage = (submitState as? SetupSubmitState.Error)?.let { stringResource(it.messageResId) }
+
     GreenhouseSetupPairingScreen(
         pairingCode = stateHolder.state.pairingCode,
         onPairingCodeChange = stateHolder::updatePairingCode,
         onBackClick = onBackClick,
-        onFinishClick = onFinishClick,
-        onHelpClick = { /* TODO: navigasi ke bantuan/FAQ pairing perangkat */ }
+        onFinishClick = stateHolder::submit,
+        onHelpClick = { /* TODO: navigasi ke bantuan/FAQ pairing perangkat */ },
+        isLoading = submitState is SetupSubmitState.Loading,
+        errorMessage = errorMessage
     )
 }

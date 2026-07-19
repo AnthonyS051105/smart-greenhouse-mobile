@@ -3,6 +3,9 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    // Membaca app/google-services.json (per-developer, lihat app/.gitignore) dan men-generate
+    // resource yang dipakai Firebase SDK saat runtime (project id, API key, dst).
+    alias(libs.plugins.google.services)
 }
 
 // Maps SDK API key dibaca dari local.properties (tidak di-commit, lihat mobile/local.properties)
@@ -15,6 +18,12 @@ val localProperties = Properties().apply {
     }
 }
 val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
+
+// Cloudinary cloud name & upload preset (unsigned) — dibaca dari local.properties (tidak
+// di-commit) lalu diekspos sebagai BuildConfig field, pola sama seperti mapsApiKey di atas.
+// Lihat CloudinaryRepository.kt untuk cara pakainya.
+val cloudinaryCloudName: String = localProperties.getProperty("CLOUDINARY_CLOUD_NAME", "")
+val cloudinaryUploadPreset: String = localProperties.getProperty("CLOUDINARY_UPLOAD_PRESET", "")
 
 android {
     namespace = "com.teti2026.smartgreenhouse"
@@ -33,6 +42,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"$cloudinaryCloudName\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"$cloudinaryUploadPreset\"")
     }
 
     buildTypes {
@@ -48,6 +59,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -62,6 +74,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.coil.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.maps.compose)
@@ -71,6 +84,14 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    // Upload foto ke Cloudinary via unsigned upload REST API (multipart), lihat CloudinaryRepository.kt.
+    implementation(libs.okhttp)
+    // Firebase BoM: satu sumber versi untuk seluruh artifact Firebase di bawahnya, jangan
+    // tambahkan version.ref terpisah per-artifact (lihat komentar di libs.versions.toml).
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

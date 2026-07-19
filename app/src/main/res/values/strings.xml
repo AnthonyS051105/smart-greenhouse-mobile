@@ -14,6 +14,19 @@
     <string name="auth_login_button">Masuk</string>
     <string name="auth_register_prompt">Belum punya akun?</string>
     <string name="auth_register_cta">Daftar Akun Baru</string>
+    <string name="auth_name_label">Nama Lengkap</string>
+    <string name="auth_register_button">Daftar</string>
+    <string name="auth_login_prompt">Sudah punya akun?</string>
+    <string name="auth_login_cta">Masuk di sini</string>
+    <string name="auth_error_invalid_email">Format email tidak valid.</string>
+    <string name="auth_error_wrong_password">Email atau kata sandi salah.</string>
+    <string name="auth_error_user_not_found">Akun tidak ditemukan. Periksa email atau daftar akun baru.</string>
+    <string name="auth_error_email_in_use">Email sudah terdaftar. Silakan masuk.</string>
+    <string name="auth_error_weak_password">Kata sandi minimal 6 karakter.</string>
+    <string name="auth_error_network">Tidak ada koneksi internet. Coba lagi.</string>
+    <string name="auth_error_generic">Terjadi kesalahan. Silakan coba lagi.</string>
+    <string name="auth_error_name_required">Nama tidak boleh kosong.</string>
+    <string name="auth_error_role_not_found">Data akun tidak lengkap. Hubungi admin.</string>
 
     <!-- Marketplace - Pembeli -->
     <string name="marketplace_notifications_content_description">Notifikasi</string>
@@ -230,6 +243,8 @@
     <string name="setup_greenhouse_pairing_instruction">Masukkan 6 digit kode pairing yang tertera pada perangkat IoT Anda.</string>
     <string name="setup_greenhouse_pairing_finish_button">Selesaikan Setup</string>
     <string name="setup_greenhouse_pairing_help_button">Butuh Bantuan?</string>
+    <string name="setup_greenhouse_error_incomplete">Data lahan belum lengkap. Periksa kembali ukuran dan lokasi.</string>
+    <string name="setup_greenhouse_error_save_failed">Gagal menyimpan data greenhouse. Periksa koneksi internet dan coba lagi.</string>
 
     <!-- Profil & Pengaturan - Petani -->
     <string name="profile_farmer_top_bar_title">AgriSmart</string>
@@ -266,6 +281,8 @@
     <string name="create_listing_preorder_title">Tersedia untuk Pre-order</string>
     <string name="create_listing_preorder_subtitle">Izinkan pembeli memesan sebelum panen</string>
     <string name="create_listing_publish_button">Publikasikan</string>
+    <string name="create_listing_error_no_photo">Tambahkan minimal satu foto produk sebelum publikasi.</string>
+    <string name="create_listing_error_upload_failed">Gagal mengunggah foto. Periksa koneksi internet Anda, lalu coba lagi.</string>
 
     <!-- Riwayat Citra - Petani -->
     <string name="image_history_top_bar_title">Riwayat Citra &amp; Skor AI</string>

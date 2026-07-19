@@ -1,1 +1,6 @@
 /build
+
+# Kredensial Firebase per-device/per-developer — setiap anggota tim men-download sendiri dari
+# Firebase Console (project "smart-greenhouse-marketplace") > Project settings > General >
+# tab Android app > google-services.json. Tidak di-commit karena berisi API key project.
+google-services.json

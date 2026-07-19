@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.data.model.UserRole
+import com.teti2026.smartgreenhouse.repository.AuthRepository
 import com.teti2026.smartgreenhouse.ui.auth.LoginRegisterRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ChatListBuyerRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ChatRoute
@@ -65,6 +66,11 @@ private val FARMER_BOTTOM_NAV_DESTINATIONS =
 fun GreenhouseNavGraph(
     navController: NavHostController = rememberNavController()
 ) {
+    // Instance tunggal dipakai kedua tombol "Keluar" (Petani & Pembeli) di bawah — signOut()
+    // adalah panggilan SDK lokal sinkron tanpa state loading/error, jadi dipanggil langsung dari
+    // sini alih-alih lewat ViewModel+StateFlow (yang hanya perlu untuk operasi async/berstate).
+    val authRepository = remember { AuthRepository() }
+
     // Menampung hasil pindaian tanaman on-demand terakhir (ScanPlantRoute) untuk ditransfer ke
     // Buat Listing — tidak lewat NavArgs karena ScanAnalysisResult bukan objek statis yang bisa
     // di-resolve by-id (beda dari sampleImageAnalysisDetails). Cukup bertahan selama sesi
@@ -119,15 +125,9 @@ fun GreenhouseNavGraph(
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
         composable(Routes.LOGIN) {
             LoginRegisterRoute(
-                onLoginClick = { role ->
+                onLoginClick = { role, hasFarmSetup ->
                     when (role) {
                         UserRole.FARMER -> {
-                            // TODO: flag dummy — ganti dengan cek Firestore `farms` (apakah
-                            // petani ini sudah punya dokumen farm/plot) via AuthViewModel/
-                            // FirestoreRepository saat MOB-T06/T07 dikerjakan. Untuk sekarang
-                            // selalu true supaya Dashboard bisa dilihat & diuji end-to-end;
-                            // saat false, tujuan adalah flow Setup Greenhouse (langkah 1/3).
-                            val hasFarmSetup = true
                             val destination = if (hasFarmSetup) {
                                 Routes.FARMER_DASHBOARD
                             } else {
@@ -230,6 +230,7 @@ fun GreenhouseNavGraph(
                 },
                 onNotificationsClick = { navController.navigate(Routes.FARMER_NOTIFICATIONS) },
                 onLogoutClick = {
+                    authRepository.logout()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
@@ -270,9 +271,9 @@ fun GreenhouseNavGraph(
             GreenhouseSetupPairingRoute(
                 stateHolder = setupStateHolder,
                 onBackClick = { navController.popBackStack() },
+                // Dipanggil GreenhouseSetupPairingRoute PERSIS SEKALI setelah farms+plots
+                // sungguhan tersimpan ke Firestore (lihat GreenhouseSetupStateHolder.submit()).
                 onFinishClick = {
-                    // TODO: simpan Farm + Plot ke Firestore via FirestoreRepository saat
-                    // MOB-T07 dikerjakan. Untuk sekarang langsung navigasi ke Dashboard.
                     navController.navigate(Routes.FARMER_DASHBOARD) {
                         popUpTo(Routes.FARMER_SETUP_GREENHOUSE_DATA) { inclusive = true }
                     }
@@ -488,6 +489,7 @@ fun GreenhouseNavGraph(
                 // seluruh back stack App Pembeli dibersihkan — pola sama seperti onLogoutClick
                 // ProfileFarmerRoute di atas.
                 onLogoutConfirmed = {
+                    authRepository.logout()
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }

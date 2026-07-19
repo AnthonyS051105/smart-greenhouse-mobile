@@ -7,7 +7,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.teti2026.smartgreenhouse.R
+import com.teti2026.smartgreenhouse.repository.CloudinaryRepository
+import kotlinx.coroutines.launch
 
 /**
  * Route "Buat Listing - Petani": state di-hoist di sini (pola sama seperti
@@ -20,16 +26,16 @@ import androidx.compose.runtime.setValue
  *
  * TODO (MOB-T13): [productName] & [CreateListingFormState.healthScore] saat ini data sampel
  * dari plot aktif — ganti dengan hasil `POST /listings/auto-fill-health-score`
- * (`docs/data-contracts.md §4.6`) begitu BackendRepository/plot aktif petani dikerjakan.
- * TODO (MOB-T26): [photoUris] hanya preview lokal (galeri perangkat) — belum di-upload ke
- * Cloudinary. Saat MOB-T26 dikerjakan, upload tiap [Uri] via CloudinaryRepository.uploadImage
- * sebelum [onPublishClick] menyimpan `Listing` ke Firestore (FirestoreRepository.createListing).
+ * (`docs/data-contracts.md §4.6`) begitu BackendRepository/plot aktif petani dikerjakan. URL hasil
+ * upload Cloudinary di bawah ini juga belum disimpan kemana pun — begitu FirestoreRepository
+ * .createListing dikerjakan, teruskan `uploadedImageUrls` sebagai field foto `Listing`.
  */
 @Composable
 fun CreateListingRoute(
     onBackClick: () -> Unit,
     onPublishClick: () -> Unit,
-    initialFormState: CreateListingFormState? = null
+    initialFormState: CreateListingFormState? = null,
+    cloudinaryRepository: CloudinaryRepository = remember { CloudinaryRepository() }
 ) {
     var formState by remember {
         mutableStateOf(
@@ -38,6 +44,12 @@ fun CreateListingRoute(
                 healthScore = 87.0
             )
         )
+    }
+    var publishState by remember { mutableStateOf<ListingPublishState>(ListingPublishState.Idle) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val publishErrorMessage = (publishState as? ListingPublishState.Error)?.let {
+        stringResource(it.messageResId)
     }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -72,6 +84,32 @@ fun CreateListingRoute(
         preOrderEnabled = formState.preOrderEnabled,
         onPreOrderToggle = { formState = formState.copy(preOrderEnabled = it) },
         onBackClick = onBackClick,
-        onPublishClick = onPublishClick
+        isPublishing = publishState is ListingPublishState.Uploading,
+        publishErrorMessage = publishErrorMessage,
+        onPublishClick = {
+            if (formState.photoUris.isEmpty()) {
+                publishState = ListingPublishState.Error(R.string.create_listing_error_no_photo)
+                return@CreateListingScreen
+            }
+            publishState = ListingPublishState.Uploading
+            coroutineScope.launch {
+                val uploadedImageUrls = mutableListOf<String>()
+                var uploadFailed = false
+                // Upload berurutan (bukan paralel) — cukup untuk maks. 3 foto (MAX_PHOTOS di
+                // CreateListingScreen.kt) & lebih sederhana untuk melaporkan kegagalan per-file.
+                for (uri in formState.photoUris) {
+                    cloudinaryRepository.uploadImage(context, uri)
+                        .onSuccess { url -> uploadedImageUrls += url }
+                        .onFailure { uploadFailed = true }
+                    if (uploadFailed) break
+                }
+                if (uploadFailed) {
+                    publishState = ListingPublishState.Error(R.string.create_listing_error_upload_failed)
+                } else {
+                    publishState = ListingPublishState.Idle
+                    onPublishClick()
+                }
+            }
+        }
     )
 }

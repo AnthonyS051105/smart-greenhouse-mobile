@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +61,9 @@ private const val HERO_IMAGE_URL =
  */
 @Composable
 fun LoginRegisterScreen(
+    isRegisterMode: Boolean,
+    name: String,
+    onNameChange: (String) -> Unit,
     selectedRole: UserRole,
     onRoleSelected: (UserRole) -> Unit,
     email: String,
@@ -68,15 +72,20 @@ fun LoginRegisterScreen(
     onPasswordChange: (String) -> Unit,
     isPasswordVisible: Boolean,
     onTogglePasswordVisibility: () -> Unit,
-    onLoginClick: () -> Unit,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onPrimaryActionClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
-    onRegisterClick: () -> Unit,
+    onToggleModeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         AuthHeroSection(modifier = Modifier.weight(0.55f))
 
         AuthFormCard(
+            isRegisterMode = isRegisterMode,
+            name = name,
+            onNameChange = onNameChange,
             selectedRole = selectedRole,
             onRoleSelected = onRoleSelected,
             email = email,
@@ -85,9 +94,11 @@ fun LoginRegisterScreen(
             onPasswordChange = onPasswordChange,
             isPasswordVisible = isPasswordVisible,
             onTogglePasswordVisibility = onTogglePasswordVisibility,
-            onLoginClick = onLoginClick,
+            isLoading = isLoading,
+            errorMessage = errorMessage,
+            onPrimaryActionClick = onPrimaryActionClick,
             onForgotPasswordClick = onForgotPasswordClick,
-            onRegisterClick = onRegisterClick,
+            onToggleModeClick = onToggleModeClick,
             modifier = Modifier.weight(0.45f)
         )
     }
@@ -140,6 +151,9 @@ private fun AuthHeroSection(modifier: Modifier = Modifier) {
 
 @Composable
 private fun AuthFormCard(
+    isRegisterMode: Boolean,
+    name: String,
+    onNameChange: (String) -> Unit,
     selectedRole: UserRole,
     onRoleSelected: (UserRole) -> Unit,
     email: String,
@@ -148,9 +162,11 @@ private fun AuthFormCard(
     onPasswordChange: (String) -> Unit,
     isPasswordVisible: Boolean,
     onTogglePasswordVisibility: () -> Unit,
-    onLoginClick: () -> Unit,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onPrimaryActionClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
-    onRegisterClick: () -> Unit,
+    onToggleModeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -185,11 +201,22 @@ private fun AuthFormCard(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
                 )
 
-                RoleSegmentedControl(
-                    selectedRole = selectedRole,
-                    onRoleSelected = onRoleSelected,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
+                // Role hanya relevan saat mendaftar — akun yang sudah ada punya role tetap
+                // (tersimpan di Firestore `users/{uid}.role`), tidak bisa dipilih ulang saat login.
+                if (isRegisterMode) {
+                    RoleSegmentedControl(
+                        selectedRole = selectedRole,
+                        onRoleSelected = onRoleSelected,
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+
+                    GreenhouseTextField(
+                        value = name,
+                        onValueChange = onNameChange,
+                        label = stringResource(R.string.auth_name_label),
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
 
                 GreenhouseTextField(
                     value = email,
@@ -217,19 +244,31 @@ private fun AuthFormCard(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                if (!isRegisterMode) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        Text(
+                            text = stringResource(R.string.auth_forgot_password),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier
+                                .padding(bottom = 16.dp)
+                                .clickable(onClick = onForgotPasswordClick)
+                        )
+                    }
+                }
+
+                if (errorMessage != null) {
                     Text(
-                        text = stringResource(R.string.auth_forgot_password),
+                        text = errorMessage,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier
-                            .padding(bottom = 16.dp)
-                            .clickable(onClick = onForgotPasswordClick)
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
                 }
 
                 Button(
-                    onClick = onLoginClick,
+                    onClick = onPrimaryActionClick,
+                    enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(percent = 50),
                     colors = ButtonDefaults.buttonColors(
@@ -237,10 +276,20 @@ private fun AuthFormCard(
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(
-                        text = stringResource(R.string.auth_login_button),
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(
+                                if (isRegisterMode) R.string.auth_register_button else R.string.auth_login_button
+                            ),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -248,16 +297,20 @@ private fun AuthFormCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(onClick = onRegisterClick),
+                        .clickable(onClick = onToggleModeClick),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.auth_register_prompt) + " ",
+                        text = stringResource(
+                            if (isRegisterMode) R.string.auth_login_prompt else R.string.auth_register_prompt
+                        ) + " ",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = stringResource(R.string.auth_register_cta),
+                        text = stringResource(
+                            if (isRegisterMode) R.string.auth_login_cta else R.string.auth_register_cta
+                        ),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primaryContainer
                     )
@@ -270,6 +323,8 @@ private fun AuthFormCard(
 @Preview(showBackground = true, heightDp = 800)
 @Composable
 private fun LoginRegisterScreenPreview() {
+    var isRegisterMode by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
     var role by remember { mutableStateOf(UserRole.FARMER) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -277,6 +332,9 @@ private fun LoginRegisterScreenPreview() {
 
     SmartgreenhousemobileTheme {
         LoginRegisterScreen(
+            isRegisterMode = isRegisterMode,
+            name = name,
+            onNameChange = { name = it },
             selectedRole = role,
             onRoleSelected = { role = it },
             email = email,
@@ -285,9 +343,11 @@ private fun LoginRegisterScreenPreview() {
             onPasswordChange = { password = it },
             isPasswordVisible = passwordVisible,
             onTogglePasswordVisibility = { passwordVisible = !passwordVisible },
-            onLoginClick = {},
+            isLoading = false,
+            errorMessage = null,
+            onPrimaryActionClick = {},
             onForgotPasswordClick = {},
-            onRegisterClick = {}
+            onToggleModeClick = { isRegisterMode = !isRegisterMode }
         )
     }
 }

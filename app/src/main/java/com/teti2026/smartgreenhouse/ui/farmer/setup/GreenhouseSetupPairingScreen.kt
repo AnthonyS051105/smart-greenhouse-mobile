@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.SensorsOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +67,8 @@ fun GreenhouseSetupPairingScreen(
     onBackClick: () -> Unit,
     onFinishClick: () -> Unit,
     onHelpClick: () -> Unit,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -157,13 +160,23 @@ fun GreenhouseSetupPairingScreen(
                     .padding(top = 24.dp, bottom = 32.dp)
             )
 
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                )
+            }
+
             Column(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Button(
                     onClick = onFinishClick,
-                    enabled = pairingCode.length == PAIRING_CODE_LENGTH,
+                    enabled = pairingCode.length == PAIRING_CODE_LENGTH && !isLoading,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(percent = 50),
                     colors = ButtonDefaults.buttonColors(
@@ -171,10 +184,18 @@ fun GreenhouseSetupPairingScreen(
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(
-                        text = stringResource(R.string.setup_greenhouse_pairing_finish_button),
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.setup_greenhouse_pairing_finish_button),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
                 OutlinedButton(
                     onClick = onHelpClick,

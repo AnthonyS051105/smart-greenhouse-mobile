@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -86,7 +87,9 @@ fun CreateListingScreen(
     onPreOrderToggle: (Boolean) -> Unit,
     onBackClick: () -> Unit,
     onPublishClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isPublishing: Boolean = false,
+    publishErrorMessage: String? = null
 ) {
     Scaffold(
         modifier = modifier,
@@ -116,22 +119,40 @@ fun CreateListingScreen(
                 color = MaterialTheme.colorScheme.surfaceContainerLowest,
                 shadowElevation = 8.dp
             ) {
-                Button(
-                    onClick = onPublishClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(52.dp),
-                    shape = RoundedCornerShape(percent = 50),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Text(
-                        text = stringResource(R.string.create_listing_publish_button),
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    if (publishErrorMessage != null) {
+                        Text(
+                            text = publishErrorMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    Button(
+                        onClick = onPublishClick,
+                        enabled = !isPublishing,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(percent = 50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        if (isPublishing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.create_listing_publish_button),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
                 }
             }
         }

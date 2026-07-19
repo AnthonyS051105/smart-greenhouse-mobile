@@ -16,6 +16,7 @@ import androidx.navigation.navArgument
 import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.data.model.UserRole
 import com.teti2026.smartgreenhouse.ui.auth.LoginRegisterRoute
+import com.teti2026.smartgreenhouse.ui.buyer.ChatListBuyerRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ChatRoute
 import com.teti2026.smartgreenhouse.ui.buyer.CheckoutRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailRoute
@@ -45,8 +46,13 @@ import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupLocationRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupPairingRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.rememberGreenhouseSetupStateHolder
 
-private val BUYER_BOTTOM_NAV_DESTINATIONS =
-    setOf(Routes.BUYER_MARKETPLACE, Routes.BUYER_MAP, Routes.BUYER_ORDERS, Routes.BUYER_PROFILE)
+private val BUYER_BOTTOM_NAV_DESTINATIONS = setOf(
+    Routes.BUYER_MARKETPLACE,
+    Routes.BUYER_MAP,
+    Routes.BUYER_ORDERS,
+    Routes.BUYER_CHAT_LIST,
+    Routes.BUYER_PROFILE
+)
 private val FARMER_BOTTOM_NAV_DESTINATIONS =
     setOf(Routes.FARMER_DASHBOARD, Routes.FARMER_IMAGE_HISTORY, Routes.FARMER_CHAT, Routes.FARMER_PROFILE)
 
@@ -446,6 +452,18 @@ fun GreenhouseNavGraph(
                     // kembali. Untuk sekarang langsung kembali ke Riwayat Pesanan.
                     navController.popBackStack()
                 }
+            )
+        }
+        composable(Routes.BUYER_CHAT_LIST) {
+            ChatListBuyerRoute(
+                onConversationClick = { conversation ->
+                    // Chat negosiasi satu percakapan tetap destination [Routes.BUYER_CHAT] yang
+                    // sama dengan yang dijangkau dari tombol ikon chat di Detail Produk — [listingId]
+                    // menentukan thread yang dibuka, sama seperti [onChatClick] di bawah.
+                    navController.navigate(Routes.buyerChat(conversation.listingId))
+                },
+                onNotificationsClick = { navController.navigate(Routes.BUYER_NOTIFICATIONS) },
+                onBottomNavigate = onBuyerBottomNavigate
             )
         }
         composable(Routes.BUYER_PROFILE) {

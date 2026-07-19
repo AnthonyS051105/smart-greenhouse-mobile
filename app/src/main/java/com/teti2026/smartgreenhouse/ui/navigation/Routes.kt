@@ -68,6 +68,13 @@ object Routes {
     // Tujuan tab "Profil" navbar Pembeli — padanan [FARMER_PROFILE] sisi Petani.
     const val BUYER_PROFILE = "buyer/profile"
 
+    // Tujuan tab "Pesan" navbar Pembeli — daftar percakapan dengan petani, padanan [FARMER_CHAT]
+    // sisi Petani. Chat negosiasi satu percakapan TETAP destination terpisah [BUYER_CHAT] (dipush
+    // biasa) — literal path berbeda ("chat-list" vs "chat/{listingId}") supaya tidak ambigu
+    // dengan pola [BUYER_CHAT] yang sudah ada, meski Navigation Compose sebenarnya bisa
+    // membedakan "buyer/chat" vs "buyer/chat/{listingId}" (lihat FARMER_CHAT/FARMER_CHAT_CONVERSATION).
+    const val BUYER_CHAT_LIST = "buyer/chat-list"
+
     // Tujuan tombol ikon lonceng (top bar Marketplace - Pembeli). Destination terpisah yang
     // di-push biasa (bukan tab bottom-nav persisten, padanan [BUYER_CHAT]/[BUYER_CHECKOUT]) —
     // BuyerBottomNavBar tetap ditampilkan di layar ini (permintaan user) tapi tidak ada item

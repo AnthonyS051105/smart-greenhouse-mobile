@@ -187,6 +187,9 @@
     <string name="chat_quick_reply_farmer_accept">Setuju</string>
     <string name="chat_quick_reply_farmer_stock_available">Stok Tersedia</string>
 
+    <!-- Pesan - Pembeli (daftar percakapan sisi pembeli, tab bawah "Pesan") -->
+    <string name="chat_list_buyer_empty">Belum ada percakapan dengan petani.</string>
+
     <!-- Setup Greenhouse (3 langkah: Data Utama, Lokasi Lahan, Pairing Perangkat) -->
     <string name="setup_greenhouse_top_bar_title">Setup Greenhouse</string>
     <string name="setup_greenhouse_back_content_description">Kembali</string>

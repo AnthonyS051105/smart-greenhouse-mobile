@@ -49,6 +49,12 @@ object Routes {
     /** Bangun route [FARMER_CHAT_CONVERSATION] konkret untuk satu percakapan. */
     fun farmerChatConversation(conversationId: String) = "farmer/chat/$conversationId"
 
+    // Tujuan tombol ikon lonceng (top bar Dashboard/Pesan) & menu "Notifikasi" di Profil Petani.
+    // Destination terpisah yang di-push biasa (bukan tab bottom-nav persisten), padanan
+    // [BUYER_NOTIFICATIONS] — FarmerBottomNavBar tetap ditampilkan di layar ini tapi tidak ada
+    // item yang aktif karena Notifikasi bukan salah satu dari 5 tab tersebut.
+    const val FARMER_NOTIFICATIONS = "farmer/notifications"
+
     // Pembeli
     const val BUYER_MARKETPLACE = "buyer/marketplace"
     const val BUYER_MAP = "buyer/map"

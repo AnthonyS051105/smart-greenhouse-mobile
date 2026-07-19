@@ -30,6 +30,7 @@ import com.teti2026.smartgreenhouse.ui.buyer.ReviewRoute
 import com.teti2026.smartgreenhouse.ui.buyer.sampleNearbyFarms
 import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
+import com.teti2026.smartgreenhouse.ui.farmer.NotificationFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.chat.ChatListRoute
 import com.teti2026.smartgreenhouse.ui.farmer.chat.FarmerChatRoute
@@ -128,6 +129,7 @@ fun GreenhouseNavGraph(
         composable(Routes.FARMER_DASHBOARD) {
             DashboardFarmerRoute(
                 onImageHistoryClick = { onFarmerBottomNavigate(Routes.FARMER_IMAGE_HISTORY) },
+                onNotificationsClick = { navController.navigate(Routes.FARMER_NOTIFICATIONS) },
                 onBottomNavigate = onFarmerBottomNavigate
             )
         }
@@ -175,6 +177,17 @@ fun GreenhouseNavGraph(
                 onConversationClick = { conversation ->
                     navController.navigate(Routes.farmerChatConversation(conversation.id))
                 },
+                onNotificationsClick = { navController.navigate(Routes.FARMER_NOTIFICATIONS) },
+                onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        composable(Routes.FARMER_NOTIFICATIONS) {
+            NotificationFarmerRoute(
+                onBackClick = { navController.popBackStack() },
+                // "" (bukan salah satu Routes.FARMER_* tab): lihat catatan di
+                // Routes.FARMER_NOTIFICATIONS & NotificationFarmerRoute — tidak ada item
+                // FarmerBottomNavBar yang tersorot aktif di sini.
+                currentBottomNavRoute = "",
                 onBottomNavigate = onFarmerBottomNavigate
             )
         }
@@ -195,6 +208,7 @@ fun GreenhouseNavGraph(
                 onMyGreenhousesClick = {
                     navController.navigate(Routes.FARMER_SETUP_GREENHOUSE_DATA)
                 },
+                onNotificationsClick = { navController.navigate(Routes.FARMER_NOTIFICATIONS) },
                 onLogoutClick = {
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }

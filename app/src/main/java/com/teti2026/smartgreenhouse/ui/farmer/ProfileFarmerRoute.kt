@@ -9,6 +9,7 @@ import com.teti2026.smartgreenhouse.ui.navigation.Routes
 @Composable
 fun ProfileFarmerRoute(
     onMyGreenhousesClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
     onBottomNavigate: (String) -> Unit = {}
 ) {
@@ -19,7 +20,7 @@ fun ProfileFarmerRoute(
         onEditProfileClick = { /* TODO: navigasi ke Edit Profil saat screen dibuat */ },
         onMyGreenhousesClick = onMyGreenhousesClick,
         onLanguageClick = { /* TODO: navigasi ke pengaturan Bahasa saat screen dibuat */ },
-        onNotificationsClick = { /* TODO: navigasi ke layar Notifikasi */ },
+        onNotificationsClick = onNotificationsClick,
         onHelpClick = { /* TODO: navigasi ke Bantuan saat screen dibuat */ },
         onLogoutClick = onLogoutClick,
         currentBottomNavRoute = Routes.FARMER_PROFILE,

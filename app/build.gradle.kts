@@ -25,6 +25,11 @@ val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
 val cloudinaryCloudName: String = localProperties.getProperty("CLOUDINARY_CLOUD_NAME", "")
 val cloudinaryUploadPreset: String = localProperties.getProperty("CLOUDINARY_UPLOAD_PRESET", "")
 
+// Base URL backend FastAPI (Railway) — dibaca dari local.properties (tidak di-commit), pola
+// sama seperti mapsApiKey/cloudinaryCloudName di atas. Isi BACKEND_BASE_URL=<url>/ (wajib
+// trailing slash, syarat Retrofit) di local.properties. Lihat NetworkModule.kt untuk cara pakainya.
+val backendBaseUrl: String = localProperties.getProperty("BACKEND_BASE_URL", "")
+
 android {
     namespace = "com.teti2026.smartgreenhouse"
     compileSdk {
@@ -44,6 +49,7 @@ android {
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"$cloudinaryCloudName\"")
         buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"$cloudinaryUploadPreset\"")
+        buildConfigField("String", "BACKEND_BASE_URL", "\"$backendBaseUrl\"")
     }
 
     buildTypes {
@@ -86,6 +92,10 @@ dependencies {
     implementation(libs.androidx.camera.view)
     // Upload foto ke Cloudinary via unsigned upload REST API (multipart), lihat CloudinaryRepository.kt.
     implementation(libs.okhttp)
+    // REST ke backend FastAPI (kontrol aktuator, trigger AI, export CSV) — lihat NetworkModule.kt.
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging.interceptor)
     // Firebase BoM: satu sumber versi untuk seluruh artifact Firebase di bawahnya, jangan
     // tambahkan version.ref terpisah per-artifact (lihat komentar di libs.versions.toml).
     implementation(platform(libs.firebase.bom))

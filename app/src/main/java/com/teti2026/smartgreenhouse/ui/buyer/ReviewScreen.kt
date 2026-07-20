@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +61,8 @@ fun ReviewScreen(
     onCommentChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onSubmitClick: () -> Unit,
+    isSubmitting: Boolean = false,
+    submitErrorMessage: String? = null,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -79,9 +82,14 @@ fun ReviewScreen(
                 placeholder = stringResource(R.string.review_comment_placeholder, target.sellerName)
             )
         }
-        // Kirim baru aktif setelah bintang dipilih — rating adalah field wajib `reviews.rating`
-        // (docs/data-contracts.md §3.10), ulasan teks bersifat opsional.
-        ReviewBottomBar(submitEnabled = rating > 0, onSubmitClick = onSubmitClick)
+        // Kirim baru aktif setelah bintang dipilih (rating adalah field wajib `reviews.rating`,
+        // docs/data-contracts.md §3.10, ulasan teks bersifat opsional) DAN belum sedang submit.
+        ReviewBottomBar(
+            submitEnabled = rating > 0 && !isSubmitting,
+            onSubmitClick = onSubmitClick,
+            isSubmitting = isSubmitting,
+            errorMessage = submitErrorMessage
+        )
     }
 }
 
@@ -247,6 +255,8 @@ private fun ReviewCommentField(
 private fun ReviewBottomBar(
     submitEnabled: Boolean,
     onSubmitClick: () -> Unit,
+    isSubmitting: Boolean,
+    errorMessage: String?,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -254,23 +264,43 @@ private fun ReviewBottomBar(
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shadowElevation = 8.dp
     ) {
-        Button(
-            onClick = onSubmitClick,
-            enabled = submitEnabled,
-            shape = RoundedCornerShape(percent = 50),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                disabledContainerColor = DisabledBg,
-                disabledContentColor = DisabledText
-            ),
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
-                .height(52.dp)
         ) {
-            Text(text = stringResource(R.string.review_submit_button), style = MaterialTheme.typography.labelLarge)
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            Button(
+                onClick = onSubmitClick,
+                enabled = submitEnabled,
+                shape = RoundedCornerShape(percent = 50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    disabledContainerColor = DisabledBg,
+                    disabledContentColor = DisabledText
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text(text = stringResource(R.string.review_submit_button), style = MaterialTheme.typography.labelLarge)
+                }
+            }
         }
     }
 }

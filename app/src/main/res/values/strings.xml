@@ -27,6 +27,13 @@
     <string name="auth_error_generic">Terjadi kesalahan. Silakan coba lagi.</string>
     <string name="auth_error_name_required">Nama tidak boleh kosong.</string>
     <string name="auth_error_role_not_found">Data akun tidak lengkap. Hubungi admin.</string>
+    <string name="auth_forgot_password_dialog_title">Lupa Sandi</string>
+    <string name="auth_forgot_password_dialog_description">Masukkan email akun Anda. Kami akan mengirim tautan untuk mengatur ulang kata sandi.</string>
+    <string name="auth_forgot_password_send_button">Kirim</string>
+    <string name="auth_forgot_password_cancel_button">Batal</string>
+    <string name="auth_forgot_password_success_title">Email Terkirim</string>
+    <string name="auth_forgot_password_success_message">Tautan atur ulang kata sandi telah dikirim ke %1$s (jika akun terdaftar). Periksa kotak masuk atau folder spam Anda.</string>
+    <string name="auth_forgot_password_close_button">Tutup</string>
 
     <!-- Marketplace - Pembeli -->
     <string name="marketplace_notifications_content_description">Notifikasi</string>
@@ -141,6 +148,8 @@
     <string name="review_comment_label">Ulasan Anda</string>
     <string name="review_comment_placeholder">Bagaimana kualitas produk dan pengalaman Anda bertransaksi dengan %1$s?</string>
     <string name="review_submit_button">Kirim Ulasan</string>
+    <string name="review_error_load_failed">Gagal memuat data pesanan. Periksa koneksi internet Anda.</string>
+    <string name="review_error_submit_failed">Gagal mengirim ulasan. Coba lagi.</string>
 
     <!-- Konfirmasi Pesanan - Berhasil -->
     <string name="order_success_title">Pesanan Berhasil!</string>

@@ -9,6 +9,7 @@ import com.teti2026.smartgreenhouse.data.model.Farm
 import com.teti2026.smartgreenhouse.data.model.Listing
 import com.teti2026.smartgreenhouse.data.model.Order
 import com.teti2026.smartgreenhouse.data.model.Plot
+import com.teti2026.smartgreenhouse.data.model.Review
 import com.teti2026.smartgreenhouse.data.model.User
 import com.teti2026.smartgreenhouse.data.model.UserRole
 import kotlinx.coroutines.channels.awaitClose
@@ -35,6 +36,7 @@ class FirestoreRepository(
     private val listingsCollection = firestore.collection("listings")
     private val chatMessagesCollection = firestore.collection("chat_messages")
     private val ordersCollection = firestore.collection("orders")
+    private val reviewsCollection = firestore.collection("reviews")
 
     /** Baca dokumen profil `users/{uid}` (data-contracts.md §3.1) — dipakai layar Profil kedua sisi. */
     suspend fun getUser(uid: String): Result<User> = runCatching {
@@ -391,6 +393,35 @@ class FirestoreRepository(
      */
     suspend fun updateOrderStatus(orderId: String, status: String): Result<Unit> = runCatching {
         ordersCollection.document(orderId).update("status", status).await()
+    }
+
+    /**
+     * Simpan ulasan baru (data-contracts.md §3.10) untuk pesanan [orderId] yang sudah "completed".
+     * Kepemilikan pembeli dibuktikan Firestore Security Rules lewat `get()` bersarang ke
+     * `orders/{orderId}.buyer_uid` (`docs/firestore.rules reviews.create`) — TIDAK ada
+     * `buyer_uid`/`listing_id` di skema `reviews` itu sendiri, jadi tidak perlu dikirim di sini.
+     * Tidak ada pengecekan sisi klien apakah [orderId] sudah pernah direview sebelumnya (rules
+     * juga tidak mencegah ulasan ganda) — di luar lingkup MOB-T23 saat ini.
+     */
+    suspend fun createReview(orderId: String, rating: Int, comment: String): Result<Review> = runCatching {
+        val ref = reviewsCollection.document()
+        val review = Review(
+            id = ref.id,
+            orderId = orderId,
+            rating = rating,
+            comment = comment,
+            createdAt = Instant.now().toString()
+        )
+        ref.set(
+            mapOf(
+                "id" to review.id,
+                "order_id" to review.orderId,
+                "rating" to review.rating,
+                "comment" to review.comment,
+                "created_at" to review.createdAt
+            )
+        ).await()
+        review
     }
 
     private fun mapOrderDocument(doc: DocumentSnapshot): Order = Order(

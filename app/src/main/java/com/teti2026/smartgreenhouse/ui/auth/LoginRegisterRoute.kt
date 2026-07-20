@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teti2026.smartgreenhouse.data.model.UserRole
 import com.teti2026.smartgreenhouse.viewmodel.AuthUiState
 import com.teti2026.smartgreenhouse.viewmodel.AuthViewModel
+import com.teti2026.smartgreenhouse.viewmodel.ForgotPasswordUiState
 
 /**
  * Wrapper stateful layar Login/Register — menyambungkan [LoginRegisterScreen] (stateless) ke
@@ -31,8 +32,11 @@ fun LoginRegisterRoute(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
+    var forgotPasswordEmail by remember { mutableStateOf("") }
 
     val authState by viewModel.state.collectAsStateWithLifecycle()
+    val forgotPasswordState by viewModel.forgotPasswordState.collectAsStateWithLifecycle()
 
     // Trigger navigasi hanya saat state BARU menjadi Success (bukan tiap recomposition) —
     // key(authState) pada LaunchedEffect otomatis membatasi ini karena AuthUiState.Success
@@ -65,10 +69,24 @@ fun LoginRegisterRoute(
                 viewModel.login(email, password)
             }
         },
-        onForgotPasswordClick = { /* TODO: navigasi ke lupa sandi */ },
+        onForgotPasswordClick = {
+            forgotPasswordEmail = email
+            viewModel.resetForgotPasswordState()
+            showForgotPasswordDialog = true
+        },
         onToggleModeClick = {
             isRegisterMode = !isRegisterMode
             viewModel.consumeError()
         }
     )
+
+    if (showForgotPasswordDialog) {
+        ForgotPasswordDialog(
+            email = forgotPasswordEmail,
+            onEmailChange = { forgotPasswordEmail = it },
+            state = forgotPasswordState,
+            onSendClick = { viewModel.sendPasswordReset(forgotPasswordEmail) },
+            onDismiss = { showForgotPasswordDialog = false }
+        )
+    }
 }

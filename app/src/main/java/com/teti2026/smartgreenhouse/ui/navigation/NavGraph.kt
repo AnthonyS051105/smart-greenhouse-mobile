@@ -466,9 +466,10 @@ fun GreenhouseNavGraph(
                 orderId = orderId,
                 onBackClick = { navController.popBackStack() },
                 onReviewSubmitted = {
-                    // TODO: setelah FirestoreRepository.createReview(review) sungguhan tersimpan
-                    // (MOB-T23), tampilkan Snackbar konfirmasi (docs/UIUX-Flow.md §6) sebelum
-                    // kembali. Untuk sekarang langsung kembali ke Riwayat Pesanan.
+                    // FirestoreRepository.createReview sudah tersimpan sebelum callback ini
+                    // dipanggil (lihat ReviewViewModel.submitReview) — cukup kembali ke Riwayat
+                    // Pesanan, tanpa Snackbar konfirmasi (pola sama seperti alur submit lain di
+                    // app ini, mis. CreateListingRoute/CheckoutRoute, tidak ada Snackbar host).
                     navController.popBackStack()
                 }
             )

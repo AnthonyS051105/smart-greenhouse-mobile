@@ -30,6 +30,14 @@ sealed interface AuthUiState {
     data class Error(@param:StringRes val messageResId: Int) : AuthUiState
 }
 
+/** Sesuai pola `UiState` di `docs/SDD.md §5`, TERPISAH dari [AuthUiState] — dialog "Lupa Sandi" adalah aksi berdiri sendiri, tidak mengubah hasil Login/Register. */
+sealed interface ForgotPasswordUiState {
+    data object Idle : ForgotPasswordUiState
+    data object Loading : ForgotPasswordUiState
+    data object Success : ForgotPasswordUiState
+    data class Error(@param:StringRes val messageResId: Int) : ForgotPasswordUiState
+}
+
 class AuthViewModel @JvmOverloads constructor(
     private val repository: AuthRepository = AuthRepository(),
     private val firestoreRepository: FirestoreRepository = FirestoreRepository()
@@ -37,6 +45,9 @@ class AuthViewModel @JvmOverloads constructor(
 
     private val _state = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
+
+    private val _forgotPasswordState = MutableStateFlow<ForgotPasswordUiState>(ForgotPasswordUiState.Idle)
+    val forgotPasswordState: StateFlow<ForgotPasswordUiState> = _forgotPasswordState.asStateFlow()
 
     fun register(name: String, email: String, password: String, role: UserRole) {
         _state.value = AuthUiState.Loading
@@ -73,6 +84,30 @@ class AuthViewModel @JvmOverloads constructor(
     /** Dipanggil UI setelah pesan error ditampilkan, supaya tidak muncul berulang saat recomposition. */
     fun consumeError() {
         if (_state.value is AuthUiState.Error) _state.value = AuthUiState.Idle
+    }
+
+    /**
+     * Kirim email reset password ([AuthRepository.sendPasswordResetEmail]). Validasi format email
+     * KASAR dilakukan client-side dulu (cek `contains('@')`, bukan regex penuh — Firebase sendiri
+     * yang jadi validator utama lewat `ERROR_INVALID_EMAIL`) supaya tidak perlu panggil jaringan
+     * untuk kasus jelas-jelas kosong/salah format.
+     */
+    fun sendPasswordReset(email: String) {
+        if (!email.contains('@')) {
+            _forgotPasswordState.value = ForgotPasswordUiState.Error(R.string.auth_error_invalid_email)
+            return
+        }
+        _forgotPasswordState.value = ForgotPasswordUiState.Loading
+        viewModelScope.launch {
+            repository.sendPasswordResetEmail(email)
+                .onSuccess { _forgotPasswordState.value = ForgotPasswordUiState.Success }
+                .onFailure { _forgotPasswordState.value = ForgotPasswordUiState.Error(mapAuthError(it)) }
+        }
+    }
+
+    /** Reset state dialog "Lupa Sandi" ke [ForgotPasswordUiState.Idle] — dipanggil saat dialog ditutup/dibuka ulang. */
+    fun resetForgotPasswordState() {
+        _forgotPasswordState.value = ForgotPasswordUiState.Idle
     }
 
     @StringRes

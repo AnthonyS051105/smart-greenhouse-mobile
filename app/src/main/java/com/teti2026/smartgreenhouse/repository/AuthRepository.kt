@@ -72,4 +72,16 @@ class AuthRepository(
     fun logout() {
         auth.signOut()
     }
+
+    /**
+     * Kirim email reset password Firebase Auth bawaan (link ke halaman ganti password yang
+     * di-hosting Firebase, BUKAN dibuat sendiri di app ini — sesuai `docs/PRD.md §5.2`, tidak ada
+     * flow ganti password kustom di luar Firebase). Firebase SENGAJA tidak membedakan hasil sukses
+     * untuk email terdaftar vs tidak terdaftar (mencegah user enumeration, sama alasan seperti
+     * `ERROR_INVALID_CREDENTIAL` di [login]/[AuthViewModel.mapAuthError]) — pemanggil TIDAK bisa
+     * & TIDAK PERLU tahu apakah emailnya benar-benar terdaftar dari hasil ini.
+     */
+    suspend fun sendPasswordResetEmail(email: String): Result<Unit> = runCatching {
+        auth.sendPasswordResetEmail(email).await()
+    }
 }

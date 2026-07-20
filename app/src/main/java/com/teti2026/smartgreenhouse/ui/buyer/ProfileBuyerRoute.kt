@@ -16,10 +16,10 @@ private const val BUYER_AVATAR_PLACEHOLDER_URL =
     "https://lh3.googleusercontent.com/aida-public/AB6AXuCD1B_NV9iV_BpMZRDPgemryrKcmsJNPCKF8SU9sjDo2uraOypc0ct7ouMqUmTvu3Lroc4a_BNbvzSwWvAE9tn0TjNfzgAefbl9E6_trlUglrxbF6EfNZIeyTjsDLGCFmagXEm4VvqO141LEcohECfshJTGe9YsEYwBLNob7qkszI0k_yJ6_WTXeGt7HDSWENUl6rnNoplo1bSFMlZ7XZrnIVD7igzm6dObZru_nLgWpF6KoqzRLBHzDbZSPQSolszBxmYnegXPWQ"
 
 /**
- * Wrapper stateful — nama pembeli sungguhan dari [ProfileViewModel] (Firestore `users`).
- * [buyerBadgeLabel] tetap label generik statis ("Pembeli") & [totalOrders]/[favoriteStores]
- * tetap 0 — belum ada agregasi Firestore `orders`/toko favorit sungguhan (menyusul saat
- * Checkout & Riwayat Pesanan disambungkan). [avatarUrl] juga tetap placeholder statis, sama
+ * Wrapper stateful — nama pembeli sungguhan dari [ProfileViewModel] (Firestore `users`),
+ * [totalOrders]/[favoriteStores] sungguhan dari `orders` ([ProfileUiState.Success.totalOrders]/
+ * [ProfileUiState.Success.favoriteStores]). [buyerBadgeLabel] tetap label generik statis
+ * ("Pembeli") — belum ada sistem badge/tier. [avatarUrl] juga tetap placeholder statis, sama
  * seperti [com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute].
  */
 @Composable
@@ -43,10 +43,8 @@ fun ProfileBuyerRoute(
                 buyerName = s.user.name,
                 buyerBadgeLabel = stringResource(R.string.profile_buyer_badge_default),
                 avatarUrl = BUYER_AVATAR_PLACEHOLDER_URL,
-                // TODO: hitung sungguhan dari Firestore `orders` (total) & toko/farm unik yang
-                // pernah dibeli (favorit) begitu Checkout/Riwayat Pesanan disambungkan.
-                totalOrders = 0,
-                favoriteStores = 0,
+                totalOrders = s.totalOrders ?: 0,
+                favoriteStores = s.favoriteStores ?: 0,
                 onEditProfileClick = { /* TODO: navigasi ke Edit Profil saat screen dibuat */ },
                 onOrdersClick = onOrdersClick,
                 onSavedAddressesClick = { /* TODO: navigasi ke Alamat Tersimpan saat screen dibuat */ },

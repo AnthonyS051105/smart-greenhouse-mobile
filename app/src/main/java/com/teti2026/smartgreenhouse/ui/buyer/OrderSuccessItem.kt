@@ -12,13 +12,11 @@ data class OrderSuccessItem(
 )
 
 /**
- * Turunkan [OrderSuccessItem] dari [ListingDetailItem] yang sedang di-checkout.
- *
- * TODO: ganti [OrderSuccessItem.orderId] dengan id dokumen `orders` sungguhan dari
- * `FirestoreRepository.createOrder(order)` (`docs/data-contracts.md §3.8`) begitu MOB-T21
- * dikerjakan — Checkout saat ini belum menyimpan order ke Firestore, jadi id di sini murni
- * placeholder tampilan (bukan id dokumen nyata), diturunkan deterministik dari [listing.id]
- * agar tetap stabil di preview & selama satu sesi.
+ * Turunkan [OrderSuccessItem] dari [ListingDetailItem] — dipakai HANYA untuk `@Preview` di
+ * `OrderSuccessScreen.kt`. Alur nyata (`OrderSuccessRoute`/`OrderSuccessViewModel`) membangun
+ * [OrderSuccessItem] dari dokumen `orders` sungguhan (data-contracts.md §3.8), bukan lewat fungsi
+ * ini — [orderId] di sini murni placeholder tampilan (diturunkan deterministik dari [listing.id]
+ * agar tetap stabil di preview), BUKAN id dokumen nyata.
  */
 fun orderSuccessItemFrom(listing: ListingDetailItem): OrderSuccessItem {
     val displayNumber = (abs(listing.id.hashCode()) % 100_000).toString().padStart(5, '0')

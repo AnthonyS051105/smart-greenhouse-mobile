@@ -1,4 +1,4 @@
-package com.teti2026.smartgreenhouse.ui.buyer
+package com.teti2026.smartgreenhouse.ui.farmer.orders
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -22,11 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,11 +36,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -46,23 +45,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.teti2026.smartgreenhouse.R
-import com.teti2026.smartgreenhouse.ui.navigation.BuyerBottomNavBar
-import com.teti2026.smartgreenhouse.ui.navigation.Routes
+import com.teti2026.smartgreenhouse.ui.buyer.OrderHistoryTab
+import com.teti2026.smartgreenhouse.ui.buyer.OrderStatus
+import com.teti2026.smartgreenhouse.ui.buyer.toHistoryTab
+import com.teti2026.smartgreenhouse.ui.navigation.FarmerBottomNavBar
 import com.teti2026.smartgreenhouse.ui.theme.ErrorRedAccent
 import com.teti2026.smartgreenhouse.ui.theme.InfoBlue
 import com.teti2026.smartgreenhouse.ui.theme.SmartgreenhousemobileTheme
 
 /**
- * Layar "Riwayat Pesanan - Pembeli" dari Stitch. Stateless: seluruh data & event di-hoist ke
- * caller (nantinya OrderHistoryViewModel + FirestoreRepository.getOrders(buyerUid), lihat
- * `docs/SDD.md §4.2/§5`). Dijangkau dari tab "Pesanan" di [BuyerBottomNavBar].
+ * Layar "Pesanan Masuk - Petani" — screen BARU (tidak ada mockup Stitch), dibangun setelah
+ * disadari tidak ada UI sisi Petani manapun untuk melihat/mengonfirmasi pesanan pembeli (lihat
+ * KDoc [FarmerOrderItem]). Struktur & gaya sengaja disamakan persis dengan
+ * [com.teti2026.smartgreenhouse.ui.buyer.OrderHistoryScreen] (tab 3-status yang sama, kartu
+ * serupa) supaya "UI dua sisi" tetap terasa satu sistem desain — ditambah baris nama pembeli &
+ * tombol aksi ubah status yang tidak ada padanannya di sisi Pembeli. Dijangkau dari menu
+ * "Pesanan Masuk" di Profil Petani (di-push, bukan tab bottom-nav — sama seperti Notifikasi).
  */
 @Composable
-fun OrderHistoryScreen(
-    orders: List<OrderHistoryItem>,
+fun FarmerOrdersScreen(
+    orders: List<FarmerOrderItem>,
     selectedTab: OrderHistoryTab,
     onTabSelected: (OrderHistoryTab) -> Unit,
-    onOrderClick: (OrderHistoryItem) -> Unit,
+    onStatusChange: (orderId: String, newStatus: OrderStatus) -> Unit,
     onBackClick: () -> Unit,
     currentBottomNavRoute: String,
     onBottomNavigate: (String) -> Unit,
@@ -70,9 +75,9 @@ fun OrderHistoryScreen(
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { OrderHistoryTopBar(onBackClick = onBackClick) },
+        topBar = { FarmerOrdersTopBar(onBackClick = onBackClick) },
         bottomBar = {
-            BuyerBottomNavBar(currentRoute = currentBottomNavRoute, onNavigate = onBottomNavigate)
+            FarmerBottomNavBar(currentRoute = currentBottomNavRoute, onNavigate = onBottomNavigate)
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
@@ -88,10 +93,8 @@ fun OrderHistoryScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            OrderHistoryTabBar(selectedTab = selectedTab, onTabSelected = onTabSelected)
+            FarmerOrdersTabBar(selectedTab = selectedTab, onTabSelected = onTabSelected)
 
-            // Transisi khusus per tab: geser mengikuti arah perpindahan (kiri<->kanan sesuai
-            // urutan tab) + fade, agar terasa berbeda dari transisi standar Navigation Compose.
             AnimatedContent(
                 targetState = selectedTab,
                 transitionSpec = {
@@ -101,15 +104,20 @@ fun OrderHistoryScreen(
                         fadeIn(animationSpec = tween(220)))
                         .togetherWith(fadeOut(animationSpec = tween(120)))
                 },
-                label = "order_history_tab_content"
+                label = "farmer_orders_tab_content"
             ) { tab ->
                 val filtered = orders.filter { it.status.toHistoryTab() == tab }
                 if (filtered.isEmpty()) {
-                    OrderHistoryEmptyState(tab = tab)
+                    FarmerOrdersEmptyState(tab = tab)
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         filtered.forEach { order ->
-                            OrderHistoryCard(order = order, onClick = { onOrderClick(order) })
+                            FarmerOrderCard(
+                                order = order,
+                                onConfirm = { onStatusChange(order.id, OrderStatus.CONFIRMED) },
+                                onComplete = { onStatusChange(order.id, OrderStatus.COMPLETED) },
+                                onReject = { onStatusChange(order.id, OrderStatus.CANCELLED) }
+                            )
                         }
                     }
                 }
@@ -119,7 +127,7 @@ fun OrderHistoryScreen(
 }
 
 @Composable
-private fun OrderHistoryTopBar(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun FarmerOrdersTopBar(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -135,12 +143,12 @@ private fun OrderHistoryTopBar(onBackClick: () -> Unit, modifier: Modifier = Mod
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.order_history_back_content_description),
+                    contentDescription = stringResource(R.string.farmer_orders_back_content_description),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
             Text(
-                text = stringResource(R.string.order_history_title),
+                text = stringResource(R.string.farmer_orders_title),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 4.dp)
@@ -149,13 +157,9 @@ private fun OrderHistoryTopBar(onBackClick: () -> Unit, modifier: Modifier = Mod
     }
 }
 
-/**
- * Segmented control 3 opsi khusus layar ini (bukan reuse [com.teti2026.smartgreenhouse.ui.components.RoleSegmentedControl]
- * yang spesifik untuk 2 role) — tampilan pill mengikuti mockup Stitch, warna & posisi tab aktif
- * bertransisi halus lewat `animateColorAsState`.
- */
+/** Reuse [OrderHistoryTab] & label string yang sama dengan sisi Pembeli — semantik tab identik. */
 @Composable
-private fun OrderHistoryTabBar(
+private fun FarmerOrdersTabBar(
     selectedTab: OrderHistoryTab,
     onTabSelected: (OrderHistoryTab) -> Unit,
     modifier: Modifier = Modifier
@@ -168,8 +172,8 @@ private fun OrderHistoryTabBar(
             .padding(4.dp)
     ) {
         OrderHistoryTab.entries.forEach { tab ->
-            OrderHistoryTabSegment(
-                label = orderHistoryTabLabel(tab),
+            FarmerOrdersTabSegment(
+                label = farmerOrdersTabLabel(tab),
                 selected = tab == selectedTab,
                 onClick = { onTabSelected(tab) },
                 modifier = Modifier.weight(1f)
@@ -179,7 +183,7 @@ private fun OrderHistoryTabBar(
 }
 
 @Composable
-private fun OrderHistoryTabSegment(
+private fun FarmerOrdersTabSegment(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
@@ -187,11 +191,11 @@ private fun OrderHistoryTabSegment(
 ) {
     val backgroundColor by androidx.compose.animation.animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-        label = "order_history_tab_bg"
+        label = "farmer_orders_tab_bg"
     )
     val contentColor by androidx.compose.animation.animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-        label = "order_history_tab_content_color"
+        label = "farmer_orders_tab_content_color"
     )
 
     Row(
@@ -212,34 +216,22 @@ private fun OrderHistoryTabSegment(
 }
 
 @Composable
-private fun orderHistoryTabLabel(tab: OrderHistoryTab): String = when (tab) {
+private fun farmerOrdersTabLabel(tab: OrderHistoryTab): String = when (tab) {
     OrderHistoryTab.BERLANGSUNG -> stringResource(R.string.order_history_tab_ongoing)
     OrderHistoryTab.SELESAI -> stringResource(R.string.order_history_tab_completed)
     OrderHistoryTab.DIBATALKAN -> stringResource(R.string.order_history_tab_cancelled)
 }
 
-private data class OrderStatusPresentation(
-    val label: String,
-    val containerColor: Color,
-    val contentColor: Color
-)
+private data class OrderStatusPresentation(val label: String, val containerColor: Color, val contentColor: Color)
 
-/**
- * Warna badge status TIDAK sama dengan palet health_score — mengikuti mockup Stitch persis:
- * info-blue untuk status berjalan, primary untuk selesai, error-red (aksen, bukan MD3 error)
- * untuk dibatalkan.
- */
+/** Warna badge status SAMA PERSIS dengan [com.teti2026.smartgreenhouse.ui.buyer.OrderHistoryScreen] — satu sistem visual status pesanan di kedua sisi. */
 @Composable
 private fun orderStatusPresentation(status: OrderStatus): OrderStatusPresentation = when (status) {
     OrderStatus.PENDING -> OrderStatusPresentation(
-        stringResource(R.string.order_history_status_pending),
-        InfoBlue.copy(alpha = 0.12f),
-        InfoBlue
+        stringResource(R.string.order_history_status_pending), InfoBlue.copy(alpha = 0.12f), InfoBlue
     )
     OrderStatus.CONFIRMED -> OrderStatusPresentation(
-        stringResource(R.string.order_history_status_confirmed),
-        InfoBlue.copy(alpha = 0.12f),
-        InfoBlue
+        stringResource(R.string.order_history_status_confirmed), InfoBlue.copy(alpha = 0.12f), InfoBlue
     )
     OrderStatus.COMPLETED -> OrderStatusPresentation(
         stringResource(R.string.order_history_status_completed),
@@ -247,49 +239,33 @@ private fun orderStatusPresentation(status: OrderStatus): OrderStatusPresentatio
         MaterialTheme.colorScheme.primary
     )
     OrderStatus.CANCELLED -> OrderStatusPresentation(
-        stringResource(R.string.order_history_status_cancelled),
-        ErrorRedAccent.copy(alpha = 0.12f),
-        ErrorRedAccent
+        stringResource(R.string.order_history_status_cancelled), ErrorRedAccent.copy(alpha = 0.12f), ErrorRedAccent
     )
 }
 
 @Composable
-private fun OrderHistoryCard(
-    order: OrderHistoryItem,
-    onClick: () -> Unit,
+private fun FarmerOrderCard(
+    order: FarmerOrderItem,
+    onConfirm: () -> Unit,
+    onComplete: () -> Unit,
+    onReject: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val presentation = orderStatusPresentation(order.status)
-    // Tampilan dibedakan per status (bukan cuma warna badge), sesuai mockup Stitch: kartu
-    // "Selesai" sedikit diredupkan, kartu "Dibatalkan" lebih redup lagi + gambar didesaturasi.
-    val cardAlpha = when (order.status) {
-        OrderStatus.COMPLETED -> 0.85f
-        OrderStatus.CANCELLED -> 0.7f
-        else -> 1f
-    }
-    val imageSaturation = if (order.status == OrderStatus.CANCELLED) 0.7f else 1f
-    val priceColor = if (order.status == OrderStatus.CANCELLED) {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .fillMaxWidth()
-            .alpha(cardAlpha)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick)
             .padding(16.dp)
     ) {
         AsyncImage(
             model = order.imageUrl,
             contentDescription = order.imageContentDescription,
             contentScale = ContentScale.Crop,
-            colorFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(imageSaturation) }),
             modifier = Modifier
                 .size(80.dp)
                 .clip(RoundedCornerShape(10.dp))
@@ -307,10 +283,7 @@ private fun OrderHistoryCard(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp)
                 )
-                Surface(
-                    color = presentation.containerColor,
-                    shape = RoundedCornerShape(percent = 50)
-                ) {
+                Surface(color = presentation.containerColor, shape = RoundedCornerShape(percent = 50)) {
                     Text(
                         text = presentation.label,
                         style = MaterialTheme.typography.labelSmall,
@@ -320,48 +293,95 @@ private fun OrderHistoryCard(
                 }
             }
             Text(
-                text = order.dateLabel,
+                text = stringResource(R.string.farmer_orders_buyer_prefix, order.buyerName),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(R.string.farmer_orders_quantity_date_format, order.quantityLabel, order.dateLabel),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 6.dp)
-            ) {
-                Text(
-                    text = order.totalPriceLabel,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = priceColor
-                )
-                Icon(
-                    imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Text(
+                text = order.totalPriceLabel,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            if (order.status == OrderStatus.PENDING || order.status == OrderStatus.CONFIRMED) {
+                FarmerOrderActions(
+                    status = order.status,
+                    onConfirm = onConfirm,
+                    onComplete = onComplete,
+                    onReject = onReject,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
     }
 }
 
+/**
+ * Aksi ubah status — TANPA dialog konfirmasi (di luar lingkup pertama; beda dari
+ * `ProfileBuyerLogoutDialog` yang memang butuh konfirmasi eksplisit karena aksinya membersihkan
+ * sesi login). [status] PENDING: "Konfirmasi"/"Tolak". CONFIRMED: "Tandai Selesai"/"Batalkan".
+ */
 @Composable
-private fun OrderHistoryEmptyState(tab: OrderHistoryTab, modifier: Modifier = Modifier) {
+private fun FarmerOrderActions(
+    status: OrderStatus,
+    onConfirm: () -> Unit,
+    onComplete: () -> Unit,
+    onReject: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = onReject,
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = stringResource(
+                    if (status == OrderStatus.PENDING) R.string.farmer_orders_action_reject else R.string.farmer_orders_action_cancel
+                ),
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+        Button(
+            onClick = if (status == OrderStatus.PENDING) onConfirm else onComplete,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = stringResource(
+                    if (status == OrderStatus.PENDING) R.string.farmer_orders_action_confirm else R.string.farmer_orders_action_complete
+                ),
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun FarmerOrdersEmptyState(tab: OrderHistoryTab, modifier: Modifier = Modifier) {
     val messageRes = when (tab) {
-        OrderHistoryTab.BERLANGSUNG -> R.string.order_history_empty_ongoing
-        OrderHistoryTab.SELESAI -> R.string.order_history_empty_completed
-        OrderHistoryTab.DIBATALKAN -> R.string.order_history_empty_cancelled
+        OrderHistoryTab.BERLANGSUNG -> R.string.farmer_orders_empty_ongoing
+        OrderHistoryTab.SELESAI -> R.string.farmer_orders_empty_completed
+        OrderHistoryTab.DIBATALKAN -> R.string.farmer_orders_empty_cancelled
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 64.dp)
+        modifier = modifier.fillMaxWidth().padding(vertical = 64.dp)
     ) {
         Icon(
-            imageVector = Icons.Outlined.ShoppingBag,
+            imageVector = Icons.Outlined.Inbox,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.outline,
             modifier = Modifier.size(40.dp)
@@ -377,15 +397,15 @@ private fun OrderHistoryEmptyState(tab: OrderHistoryTab, modifier: Modifier = Mo
 
 @Preview(showBackground = true, heightDp = 900)
 @Composable
-private fun OrderHistoryScreenOngoingPreview() {
+private fun FarmerOrdersScreenOngoingPreview() {
     SmartgreenhousemobileTheme {
-        OrderHistoryScreen(
-            orders = sampleOrderHistory,
+        FarmerOrdersScreen(
+            orders = sampleFarmerOrders,
             selectedTab = OrderHistoryTab.BERLANGSUNG,
             onTabSelected = {},
-            onOrderClick = {},
+            onStatusChange = { _, _ -> },
             onBackClick = {},
-            currentBottomNavRoute = Routes.BUYER_ORDERS,
+            currentBottomNavRoute = "",
             onBottomNavigate = {}
         )
     }
@@ -393,31 +413,15 @@ private fun OrderHistoryScreenOngoingPreview() {
 
 @Preview(showBackground = true, heightDp = 900)
 @Composable
-private fun OrderHistoryScreenCancelledPreview() {
+private fun FarmerOrdersScreenEmptyPreview() {
     SmartgreenhousemobileTheme {
-        OrderHistoryScreen(
-            orders = sampleOrderHistory,
+        FarmerOrdersScreen(
+            orders = emptyList(),
             selectedTab = OrderHistoryTab.DIBATALKAN,
             onTabSelected = {},
-            onOrderClick = {},
+            onStatusChange = { _, _ -> },
             onBackClick = {},
-            currentBottomNavRoute = Routes.BUYER_ORDERS,
-            onBottomNavigate = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, heightDp = 900)
-@Composable
-private fun OrderHistoryScreenEmptyPreview() {
-    SmartgreenhousemobileTheme {
-        OrderHistoryScreen(
-            orders = emptyList(),
-            selectedTab = OrderHistoryTab.SELESAI,
-            onTabSelected = {},
-            onOrderClick = {},
-            onBackClick = {},
-            currentBottomNavRoute = Routes.BUYER_ORDERS,
+            currentBottomNavRoute = "",
             onBottomNavigate = {}
         )
     }

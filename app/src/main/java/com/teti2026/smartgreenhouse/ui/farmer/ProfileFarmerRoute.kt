@@ -23,6 +23,7 @@ private const val FARMER_AVATAR_PLACEHOLDER_URL =
 @Composable
 fun ProfileFarmerRoute(
     onMyGreenhousesClick: () -> Unit = {},
+    onIncomingOrdersClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
     onBottomNavigate: (String) -> Unit = {},
@@ -45,6 +46,7 @@ fun ProfileFarmerRoute(
                 avatarUrl = FARMER_AVATAR_PLACEHOLDER_URL,
                 onEditProfileClick = { /* TODO: navigasi ke Edit Profil saat screen dibuat */ },
                 onMyGreenhousesClick = onMyGreenhousesClick,
+                onIncomingOrdersClick = onIncomingOrdersClick,
                 onLanguageClick = { /* TODO: navigasi ke pengaturan Bahasa saat screen dibuat */ },
                 onNotificationsClick = onNotificationsClick,
                 onHelpClick = { /* TODO: navigasi ke Bantuan saat screen dibuat */ },

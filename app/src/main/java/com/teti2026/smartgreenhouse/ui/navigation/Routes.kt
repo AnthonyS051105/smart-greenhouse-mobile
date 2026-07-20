@@ -4,8 +4,9 @@ package com.teti2026.smartgreenhouse.ui.navigation
  * Route id NavHost, sesuai peta navigasi di `docs/SDD.md §6`.
  * LOGIN, BUYER_MARKETPLACE, BUYER_MAP, BUYER_DETAIL, BUYER_CHAT, BUYER_CHECKOUT,
  * BUYER_ORDER_SUCCESS, BUYER_ORDERS, BUYER_REVIEW, BUYER_NOTIFICATIONS, BUYER_PROFILE,
- * FARMER_DASHBOARD, FARMER_PROFILE, FARMER_SETUP_GREENHOUSE_*, FARMER_CREATE_LISTING &
- * FARMER_IMAGE_HISTORY yang punya destination — sisanya menyusul per screen dibuat. Detail
+ * FARMER_DASHBOARD, FARMER_PROFILE, FARMER_ORDERS, FARMER_SETUP_GREENHOUSE_*,
+ * FARMER_CREATE_LISTING & FARMER_IMAGE_HISTORY yang punya destination — sisanya menyusul per
+ * screen dibuat. Detail
  * Analisis Citra BUKAN destination NavHost (lihat
  * `ImageHistoryRoute` — dirender sebagai overlay `ModalBottomSheet` di atas Riwayat Citra).
  */
@@ -55,6 +56,12 @@ object Routes {
     // item yang aktif karena Notifikasi bukan salah satu dari 5 tab tersebut.
     const val FARMER_NOTIFICATIONS = "farmer/notifications"
 
+    // Tujuan menu "Pesanan Masuk" di Profil Petani — screen BARU (tidak ada di mockup Stitch,
+    // lihat KDoc FarmerOrderItem.kt) untuk melihat & mengonfirmasi/menyelesaikan/menolak pesanan
+    // pembeli. Destination terpisah yang di-push biasa (bukan tab bottom-nav), pola sama seperti
+    // [FARMER_NOTIFICATIONS].
+    const val FARMER_ORDERS = "farmer/orders"
+
     // Pembeli
     const val BUYER_MARKETPLACE = "buyer/marketplace"
     const val BUYER_MAP = "buyer/map"
@@ -67,7 +74,7 @@ object Routes {
     const val BUYER_DETAIL = "buyer/listing/{listingId}"
     const val BUYER_CHAT = "buyer/chat/{listingId}"
     const val BUYER_CHECKOUT = "buyer/checkout/{listingId}"
-    const val BUYER_ORDER_SUCCESS = "buyer/order-success/{listingId}"
+    const val BUYER_ORDER_SUCCESS = "buyer/order-success/{orderId}"
     const val BUYER_ORDERS = "buyer/orders"
     const val BUYER_REVIEW = "buyer/review/{orderId}"
 
@@ -99,8 +106,8 @@ object Routes {
     /** Bangun route [BUYER_CHECKOUT] konkret untuk navigasi checkout listing tertentu. */
     fun buyerCheckout(listingId: String) = "buyer/checkout/$listingId"
 
-    /** Bangun route [BUYER_ORDER_SUCCESS] konkret setelah pesanan listing tertentu terkonfirmasi. */
-    fun buyerOrderSuccess(listingId: String) = "buyer/order-success/$listingId"
+    /** Bangun route [BUYER_ORDER_SUCCESS] konkret setelah pesanan (id dokumen `orders` nyata) terkonfirmasi. */
+    fun buyerOrderSuccess(orderId: String) = "buyer/order-success/$orderId"
 
     /** Bangun route [BUYER_REVIEW] konkret untuk memberi ulasan pesanan tertentu. */
     fun buyerReview(orderId: String) = "buyer/review/$orderId"

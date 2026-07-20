@@ -17,8 +17,20 @@ import kotlinx.coroutines.launch
 sealed interface ProfileUiState {
     data object Loading : ProfileUiState
 
-    /** [farmName] hanya terisi untuk [UserRole.FARMER] (subjudul "Pemilik <farmName>"), selalu null untuk Pembeli. */
-    data class Success(val user: User, val farmName: String?) : ProfileUiState
+    /**
+     * [farmName] hanya terisi untuk [UserRole.FARMER] (subjudul "Pemilik <farmName>"), selalu
+     * null untuk Pembeli. [totalOrders]/[favoriteStores] KEBALIKANNYA — hanya terisi untuk
+     * [UserRole.BUYER] (statistik kartu Profil Pembeli, dari koleksi `orders`), selalu null untuk
+     * Petani. [favoriteStores] = jumlah kebun BERBEDA (farm unik) yang listing-nya pernah dibeli
+     * pembeli ini — pendekatan sederhana, BUKAN sistem favorit/bookmark eksplisit (belum ada di
+     * `data-contracts.md`).
+     */
+    data class Success(
+        val user: User,
+        val farmName: String?,
+        val totalOrders: Int? = null,
+        val favoriteStores: Int? = null
+    ) : ProfileUiState
     data class Error(@param:StringRes val messageResId: Int) : ProfileUiState
 }
 
@@ -49,14 +61,26 @@ class ProfileViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             firestoreRepository.getUser(uid)
                 .mapCatching { user ->
-                    val farmName = if (user.role == UserRole.FARMER) {
-                        firestoreRepository.getFarmNameForOwner(uid).getOrNull()
-                    } else {
-                        null
+                    when (user.role) {
+                        UserRole.FARMER -> {
+                            val farmName = firestoreRepository.getFarmNameForOwner(uid).getOrNull()
+                            ProfileUiState.Success(user, farmName)
+                        }
+                        UserRole.BUYER -> {
+                            val orders = firestoreRepository.getOrdersForBuyer(uid).getOrNull().orEmpty()
+                            val favoriteStores = orders.mapNotNull { order ->
+                                firestoreRepository.getListingById(order.listingId).getOrNull()?.farmId
+                            }.distinct().size
+                            ProfileUiState.Success(
+                                user = user,
+                                farmName = null,
+                                totalOrders = orders.size,
+                                favoriteStores = favoriteStores
+                            )
+                        }
                     }
-                    user to farmName
                 }
-                .onSuccess { (user, farmName) -> _state.value = ProfileUiState.Success(user, farmName) }
+                .onSuccess { _state.value = it }
                 .onFailure { _state.value = ProfileUiState.Error(R.string.profile_error_load_failed) }
         }
     }

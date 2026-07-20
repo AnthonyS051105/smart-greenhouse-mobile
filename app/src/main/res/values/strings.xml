@@ -95,6 +95,8 @@
     <string name="checkout_summary_shipping_label">Ongkos Kirim</string>
     <string name="checkout_summary_total_label">Total Pembayaran</string>
     <string name="checkout_confirm_button">Konfirmasi Pesanan</string>
+    <string name="checkout_error_load_failed">Gagal memuat produk. Periksa koneksi internet.</string>
+    <string name="checkout_error_submit_failed">Gagal membuat pesanan. Periksa koneksi internet, lalu coba lagi.</string>
 
     <!-- Riwayat Pesanan - Pembeli -->
     <string name="order_history_title">Riwayat Pesanan</string>
@@ -109,6 +111,21 @@
     <string name="order_history_empty_ongoing">Belum ada pesanan yang berlangsung</string>
     <string name="order_history_empty_completed">Belum ada pesanan yang selesai</string>
     <string name="order_history_empty_cancelled">Belum ada pesanan yang dibatalkan</string>
+    <string name="order_history_error_load_failed">Gagal memuat riwayat pesanan. Periksa koneksi internet.</string>
+
+    <!-- Pesanan Masuk - Petani (screen baru, tidak ada di mockup Stitch) -->
+    <string name="farmer_orders_title">Pesanan Masuk</string>
+    <string name="farmer_orders_back_content_description">Kembali</string>
+    <string name="farmer_orders_buyer_prefix">Pembeli: %1$s</string>
+    <string name="farmer_orders_quantity_date_format">%1$s • %2$s</string>
+    <string name="farmer_orders_action_confirm">Konfirmasi</string>
+    <string name="farmer_orders_action_reject">Tolak</string>
+    <string name="farmer_orders_action_complete">Tandai Selesai</string>
+    <string name="farmer_orders_action_cancel">Batalkan</string>
+    <string name="farmer_orders_empty_ongoing">Belum ada pesanan masuk yang berlangsung</string>
+    <string name="farmer_orders_empty_completed">Belum ada pesanan yang selesai</string>
+    <string name="farmer_orders_empty_cancelled">Belum ada pesanan yang dibatalkan</string>
+    <string name="farmer_orders_error_load_failed">Gagal memuat pesanan masuk. Periksa koneksi internet.</string>
 
     <!-- Beri Rating & Ulasan - AgriSmart -->
     <string name="review_title">Beri Ulasan</string>
@@ -130,6 +147,7 @@
     <string name="order_success_message">Pesanan Anda telah diteruskan ke %1$s. Silakan pantau status pesanan di riwayat transaksi.</string>
     <string name="order_success_order_id">ID Pesanan: #%1$s</string>
     <string name="order_success_view_history_button">Lihat Riwayat Transaksi</string>
+    <string name="order_success_error_load_failed">Gagal memuat detail pesanan. Periksa koneksi internet.</string>
     <string name="order_success_back_home_button">Kembali ke Beranda</string>
 
     <!-- Dashboard Monitoring - Petani -->
@@ -259,6 +277,7 @@
     <string name="profile_farmer_avatar_content_description">Foto profil petani</string>
     <string name="profile_farmer_menu_edit_profile">Edit Profil</string>
     <string name="profile_farmer_menu_my_greenhouses">Greenhouse Saya</string>
+    <string name="profile_farmer_menu_incoming_orders">Pesanan Masuk</string>
     <string name="profile_farmer_menu_language">Bahasa</string>
     <string name="profile_farmer_menu_language_value">ID</string>
     <string name="profile_farmer_menu_notifications">Notifikasi</string>

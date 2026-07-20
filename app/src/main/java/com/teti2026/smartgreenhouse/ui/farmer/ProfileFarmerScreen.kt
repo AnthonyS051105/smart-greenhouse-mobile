@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +63,7 @@ fun ProfileFarmerScreen(
     avatarUrl: String?,
     onEditProfileClick: () -> Unit,
     onMyGreenhousesClick: () -> Unit,
+    onIncomingOrdersClick: () -> Unit,
     onLanguageClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onHelpClick: () -> Unit,
@@ -139,6 +141,11 @@ fun ProfileFarmerScreen(
                         icon = Icons.Filled.Eco,
                         label = stringResource(R.string.profile_farmer_menu_my_greenhouses),
                         onClick = onMyGreenhousesClick
+                    )
+                    ProfileMenuItem(
+                        icon = Icons.Filled.ShoppingBag,
+                        label = stringResource(R.string.profile_farmer_menu_incoming_orders),
+                        onClick = onIncomingOrdersClick
                     )
                     ProfileMenuItem(
                         icon = Icons.Filled.Language,
@@ -343,6 +350,7 @@ private fun ProfileFarmerScreenPreview() {
             avatarUrl = null,
             onEditProfileClick = {},
             onMyGreenhousesClick = {},
+            onIncomingOrdersClick = {},
             onLanguageClick = {},
             onNotificationsClick = {},
             onHelpClick = {},

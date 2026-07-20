@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,9 +63,12 @@ enum class DeliveryMethod {
 }
 
 // Nilai demo tetap — checkout belum terhubung payment gateway/kalkulasi ongkir sungguhan
-// (di luar lingkup versi bootcamp, lihat `docs/PRD.md §5.2`).
-private const val CHECKOUT_SERVICE_FEE_RUPIAH = 2_000L
-private const val CHECKOUT_SHIPPING_COST_RUPIAH = 10_000L
+// (di luar lingkup versi bootcamp, lihat `docs/PRD.md §5.2`). internal (bukan private) — dipakai
+// ulang oleh CheckoutRoute.kt untuk menghitung totalPrice yang dikirim ke createOrder, supaya
+// nominal yang disimpan Firestore SAMA PERSIS dengan yang ditampilkan di layar (bukan dihitung
+// ulang terpisah dengan angka yang bisa saja berbeda).
+internal const val CHECKOUT_SERVICE_FEE_RUPIAH = 2_000L
+internal const val CHECKOUT_SHIPPING_COST_RUPIAH = 10_000L
 
 // Kuantitas default & batas bawah stepper = 1 (bukan minOrderKg listing) — minOrderKg tetap
 // dipakai sebagai info di Detail Produk, tapi di Checkout stepper mulai dari 1 seperti pola
@@ -88,6 +92,8 @@ fun CheckoutScreen(
     onAddressChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onConfirmClick: () -> Unit,
+    isSubmitting: Boolean = false,
+    submitErrorMessage: String? = null,
     modifier: Modifier = Modifier
 ) {
     val subtotal = listing.pricePerKg * quantity
@@ -131,7 +137,12 @@ fun CheckoutScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
-        CheckoutBottomBar(confirmEnabled = canConfirm, onConfirmClick = onConfirmClick)
+        CheckoutBottomBar(
+            confirmEnabled = canConfirm && !isSubmitting,
+            onConfirmClick = onConfirmClick,
+            isSubmitting = isSubmitting,
+            errorMessage = submitErrorMessage
+        )
     }
 }
 
@@ -453,6 +464,8 @@ private fun SummaryRow(label: String, value: String, modifier: Modifier = Modifi
 private fun CheckoutBottomBar(
     confirmEnabled: Boolean,
     onConfirmClick: () -> Unit,
+    isSubmitting: Boolean,
+    errorMessage: String?,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -460,21 +473,41 @@ private fun CheckoutBottomBar(
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shadowElevation = 8.dp
     ) {
-        Button(
-            onClick = onConfirmClick,
-            enabled = confirmEnabled,
-            shape = RoundedCornerShape(percent = 50),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 16.dp)
-                .height(52.dp)
         ) {
-            Text(text = stringResource(R.string.checkout_confirm_button), style = MaterialTheme.typography.labelLarge)
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            Button(
+                onClick = onConfirmClick,
+                enabled = confirmEnabled,
+                shape = RoundedCornerShape(percent = 50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    Text(text = stringResource(R.string.checkout_confirm_button), style = MaterialTheme.typography.labelLarge)
+                }
+            }
         }
     }
 }

@@ -30,7 +30,6 @@ import com.teti2026.smartgreenhouse.ui.buyer.OrderSuccessRoute
 import com.teti2026.smartgreenhouse.ui.buyer.OrderStatus
 import com.teti2026.smartgreenhouse.ui.buyer.ProfileBuyerRoute
 import com.teti2026.smartgreenhouse.ui.buyer.ReviewRoute
-import com.teti2026.smartgreenhouse.ui.buyer.sampleOrderHistory
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.NotificationFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute
@@ -40,6 +39,7 @@ import com.teti2026.smartgreenhouse.ui.farmer.history.ImageHistoryRoute
 import com.teti2026.smartgreenhouse.ui.farmer.history.sampleImageAnalysisDetails
 import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingFormState
 import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingRoute
+import com.teti2026.smartgreenhouse.ui.farmer.orders.FarmerOrdersRoute
 import com.teti2026.smartgreenhouse.ui.farmer.scan.ScanAnalysisResult
 import com.teti2026.smartgreenhouse.ui.farmer.scan.ScanPlantRoute
 import com.teti2026.smartgreenhouse.ui.farmer.setup.GreenhouseSetupDataRoute
@@ -228,6 +228,7 @@ fun GreenhouseNavGraph(
                 onMyGreenhousesClick = {
                     navController.navigate(Routes.FARMER_SETUP_GREENHOUSE_DATA)
                 },
+                onIncomingOrdersClick = { navController.navigate(Routes.FARMER_ORDERS) },
                 onNotificationsClick = { navController.navigate(Routes.FARMER_NOTIFICATIONS) },
                 onLogoutClick = {
                     authRepository.logout()
@@ -235,6 +236,12 @@ fun GreenhouseNavGraph(
                         popUpTo(Routes.LOGIN) { inclusive = true }
                     }
                 },
+                onBottomNavigate = onFarmerBottomNavigate
+            )
+        }
+        composable(Routes.FARMER_ORDERS) {
+            FarmerOrdersRoute(
+                onBackClick = { navController.popBackStack() },
                 onBottomNavigate = onFarmerBottomNavigate
             )
         }
@@ -411,12 +418,12 @@ fun GreenhouseNavGraph(
             CheckoutRoute(
                 listingId = listingId,
                 onBackClick = { navController.popBackStack() },
-                onOrderConfirmed = { id ->
-                    // TODO: setelah FirestoreRepository.createOrder(order) sungguhan tersimpan
-                    // (MOB-T21), oper id dokumen order nyata ke OrderSuccessRoute alih-alih hanya
-                    // listingId. Detail & Checkout dibersihkan dari back stack (tidak masuk akal
-                    // menekan "back" dari layar sukses menuju form checkout yang sudah selesai).
-                    navController.navigate(Routes.buyerOrderSuccess(id)) {
+                onOrderConfirmed = { orderId ->
+                    // orderId di sini adalah id dokumen `orders` NYATA (FirestoreRepository.createOrder
+                    // sudah tersimpan sebelum callback ini dipanggil, lihat CheckoutViewModel.submitOrder).
+                    // Detail & Checkout dibersihkan dari back stack (tidak masuk akal menekan "back"
+                    // dari layar sukses menuju form checkout yang sudah selesai).
+                    navController.navigate(Routes.buyerOrderSuccess(orderId)) {
                         popUpTo(Routes.BUYER_MARKETPLACE) { inclusive = false }
                     }
                 }
@@ -424,11 +431,11 @@ fun GreenhouseNavGraph(
         }
         composable(
             route = Routes.BUYER_ORDER_SUCCESS,
-            arguments = listOf(navArgument("listingId") { type = NavType.StringType })
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val listingId = backStackEntry.arguments?.getString("listingId").orEmpty()
+            val orderId = backStackEntry.arguments?.getString("orderId").orEmpty()
             OrderSuccessRoute(
-                listingId = listingId,
+                orderId = orderId,
                 // Sama seperti tab bawah App Pembeli: Riwayat Pesanan & Marketplace adalah
                 // destination bottom-nav, jadi pakai handler yang sama agar back stack tab
                 // konsisten (popUpTo start + saveState/restoreState).
@@ -440,13 +447,12 @@ fun GreenhouseNavGraph(
             OrderHistoryRoute(
                 onBackClick = { navController.popBackStack() },
                 onBottomNavigate = onBuyerBottomNavigate,
-                onOrderClick = { orderId ->
+                onOrderClick = { order ->
                     // Hanya pesanan "Selesai" yang punya tujuan sejauh ini (Beri Rating & Ulasan).
                     // Status lain (Berlangsung/Dibatalkan) belum punya screen "Detail Pesanan" di
                     // Stitch — tap diabaikan sampai screen tersebut dibuat.
-                    val order = sampleOrderHistory.firstOrNull { it.id == orderId }
-                    if (order?.status == OrderStatus.COMPLETED) {
-                        navController.navigate(Routes.buyerReview(orderId))
+                    if (order.status == OrderStatus.COMPLETED) {
+                        navController.navigate(Routes.buyerReview(order.id))
                     }
                 }
             )

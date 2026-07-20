@@ -7,6 +7,7 @@ import com.google.firebase.firestore.Query
 import com.teti2026.smartgreenhouse.data.model.ChatMessage
 import com.teti2026.smartgreenhouse.data.model.Farm
 import com.teti2026.smartgreenhouse.data.model.Listing
+import com.teti2026.smartgreenhouse.data.model.Order
 import com.teti2026.smartgreenhouse.data.model.Plot
 import com.teti2026.smartgreenhouse.data.model.User
 import com.teti2026.smartgreenhouse.data.model.UserRole
@@ -33,6 +34,7 @@ class FirestoreRepository(
     private val plotsCollection = firestore.collection("plots")
     private val listingsCollection = firestore.collection("listings")
     private val chatMessagesCollection = firestore.collection("chat_messages")
+    private val ordersCollection = firestore.collection("orders")
 
     /** Baca dokumen profil `users/{uid}` (data-contracts.md §3.1) — dipakai layar Profil kedua sisi. */
     suspend fun getUser(uid: String): Result<User> = runCatching {
@@ -318,6 +320,89 @@ class FirestoreRepository(
         }
         awaitClose { registration.remove() }
     }
+
+    /**
+     * Simpan pesanan baru (data-contracts.md §3.8). [status] awal SELALU "pending" — diubah
+     * petani lewat [updateOrderStatus] di screen "Pesanan Masuk". [sellerUid] (pemilik farm dari
+     * `listingId`, di-resolve `CheckoutViewModel` sebelum memanggil ini) disimpan sebagai field
+     * mobile-only supaya [getOrdersForSeller] bisa query rule-safe tanpa `get()` bersarang. [totalPrice]
+     * adalah nominal LENGKAP yang ditagih ke pembeli (subtotal + biaya layanan + ongkir bila ada) —
+     * dihitung di `CheckoutViewModel`, bukan di sini, supaya repository tidak perlu tahu aturan
+     * biaya UI. TIDAK mengurangi `listings.quantity_kg` (stok) setelah order dibuat — di luar
+     * lingkup versi bootcamp (checkout memang disederhanakan tanpa payment gateway, lihat
+     * `docs/PRD.md §5.2`; mencegah overselling butuh Firestore transaction, ditunda sampai
+     * benar-benar dibutuhkan).
+     */
+    suspend fun createOrder(
+        buyerUid: String,
+        sellerUid: String,
+        listingId: String,
+        quantityKg: Double,
+        totalPrice: Long
+    ): Result<Order> = runCatching {
+        val ref = ordersCollection.document()
+        val order = Order(
+            id = ref.id,
+            buyerUid = buyerUid,
+            sellerUid = sellerUid,
+            listingId = listingId,
+            quantityKg = quantityKg,
+            totalPrice = totalPrice,
+            status = "pending",
+            createdAt = Instant.now().toString()
+        )
+        ref.set(
+            mapOf(
+                "id" to order.id,
+                "buyer_uid" to order.buyerUid,
+                "seller_uid" to order.sellerUid,
+                "listing_id" to order.listingId,
+                "quantity_kg" to order.quantityKg,
+                "total_price" to order.totalPrice,
+                "status" to order.status,
+                "created_at" to order.createdAt
+            )
+        ).await()
+        order
+    }
+
+    /** Seluruh pesanan milik [buyerUid] — dipakai Riwayat Pesanan & statistik Profil Pembeli. */
+    suspend fun getOrdersForBuyer(buyerUid: String): Result<List<Order>> = runCatching {
+        ordersCollection.whereEqualTo("buyer_uid", buyerUid).get().await()
+            .documents.map { mapOrderDocument(it) }
+    }
+
+    /** Seluruh pesanan MASUK milik [sellerUid] (petani) — dipakai screen "Pesanan Masuk". */
+    suspend fun getOrdersForSeller(sellerUid: String): Result<List<Order>> = runCatching {
+        ordersCollection.whereEqualTo("seller_uid", sellerUid).get().await()
+            .documents.map { mapOrderDocument(it) }
+    }
+
+    /** Satu order by-id — dipakai "Konfirmasi Pesanan - Berhasil" & Beri Rating. */
+    suspend fun getOrderById(orderId: String): Result<Order> = runCatching {
+        mapOrderDocument(ordersCollection.document(orderId).get().await())
+    }
+
+    /**
+     * Ubah `status` satu order (Petani konfirmasi/tandai-selesai/tolak dari "Pesanan Masuk").
+     * Firestore Security Rules `orders` HANYA mengizinkan field `status` yang berubah lewat
+     * update (lihat `docs/firestore.rules`) — cocok dengan `.update()` (bukan `.set()`) yang
+     * hanya menyentuh satu field ini, bukan menulis ulang dokumen penuh.
+     */
+    suspend fun updateOrderStatus(orderId: String, status: String): Result<Unit> = runCatching {
+        ordersCollection.document(orderId).update("status", status).await()
+    }
+
+    private fun mapOrderDocument(doc: DocumentSnapshot): Order = Order(
+        id = doc.id,
+        buyerUid = doc.getString("buyer_uid").orEmpty(),
+        sellerUid = doc.getString("seller_uid").orEmpty(),
+        listingId = doc.getString("listing_id").orEmpty(),
+        quantityKg = doc.getDouble("quantity_kg") ?: 0.0,
+        totalPrice = doc.getLong("total_price") ?: 0L,
+        status = doc.getString("status").orEmpty(),
+        createdAt = doc.getString("created_at").orEmpty()
+    )
 
     private fun mapChatMessageDocument(doc: DocumentSnapshot): ChatMessage = ChatMessage(
         id = doc.id,

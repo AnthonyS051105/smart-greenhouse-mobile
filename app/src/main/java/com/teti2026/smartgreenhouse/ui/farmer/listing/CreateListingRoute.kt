@@ -12,7 +12,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.teti2026.smartgreenhouse.R
+import com.teti2026.smartgreenhouse.repository.AuthRepository
 import com.teti2026.smartgreenhouse.repository.CloudinaryRepository
+import com.teti2026.smartgreenhouse.repository.FirestoreRepository
 import kotlinx.coroutines.launch
 
 /**
@@ -24,18 +26,21 @@ import kotlinx.coroutines.launch
  * membawa foto, deskripsi (catatan AI), & skor kesehatan citra terpilih. Default `null` berarti
  * masuk dari tombol "+" navbar biasa (pola lama, data sampel statis).
  *
- * TODO (MOB-T13): [productName] & [CreateListingFormState.healthScore] saat ini data sampel
- * dari plot aktif — ganti dengan hasil `POST /listings/auto-fill-health-score`
- * (`docs/data-contracts.md §4.6`) begitu BackendRepository/plot aktif petani dikerjakan. URL hasil
- * upload Cloudinary di bawah ini juga belum disimpan kemana pun — begitu FirestoreRepository
- * .createListing dikerjakan, teruskan `uploadedImageUrls` sebagai field foto `Listing`.
+ * TODO (MOB-T13): [CreateListingFormState.healthScore]/`productName` saat masuk dari tombol "+"
+ * navbar biasa masih data sampel ("Cabai Rawit Merah", 87.0) — ganti dengan hasil
+ * `POST /listings/auto-fill-health-score` (`docs/data-contracts.md §4.6`) begitu
+ * BackendRepository/plot aktif petani dikerjakan (di luar lingkup Firestore, backend REST
+ * terpisah). `farm_id`/`plot_id`/`crop_type` SUDAH sungguhan (lihat [FirestoreRepository
+ * .getFarmAndPlotForOwner] di bawah).
  */
 @Composable
 fun CreateListingRoute(
     onBackClick: () -> Unit,
     onPublishClick: () -> Unit,
     initialFormState: CreateListingFormState? = null,
-    cloudinaryRepository: CloudinaryRepository = remember { CloudinaryRepository() }
+    cloudinaryRepository: CloudinaryRepository = remember { CloudinaryRepository() },
+    authRepository: AuthRepository = remember { AuthRepository() },
+    firestoreRepository: FirestoreRepository = remember { FirestoreRepository() }
 ) {
     var formState by remember {
         mutableStateOf(
@@ -91,6 +96,17 @@ fun CreateListingRoute(
                 publishState = ListingPublishState.Error(R.string.create_listing_error_no_photo)
                 return@CreateListingScreen
             }
+            val quantityKg = formState.quantityKg.toDoubleOrNull()
+            val pricePerKg = formState.pricePerKg.toLongOrNull()
+            if (quantityKg == null || pricePerKg == null) {
+                publishState = ListingPublishState.Error(R.string.create_listing_error_invalid_form)
+                return@CreateListingScreen
+            }
+            val uid = authRepository.currentUser()?.uid
+            if (uid == null) {
+                publishState = ListingPublishState.Error(R.string.auth_error_generic)
+                return@CreateListingScreen
+            }
             publishState = ListingPublishState.Uploading
             coroutineScope.launch {
                 val uploadedImageUrls = mutableListOf<String>()
@@ -105,10 +121,31 @@ fun CreateListingRoute(
                 }
                 if (uploadFailed) {
                     publishState = ListingPublishState.Error(R.string.create_listing_error_upload_failed)
-                } else {
-                    publishState = ListingPublishState.Idle
-                    onPublishClick()
+                    return@launch
                 }
+
+                firestoreRepository.getFarmAndPlotForOwner(uid)
+                    .mapCatching { (farm, plot) ->
+                        firestoreRepository.createListing(
+                            farmId = farm.id,
+                            plotId = plot.id,
+                            cropType = plot.cropType,
+                            productName = formState.productName,
+                            quantityKg = quantityKg,
+                            pricePerKg = pricePerKg,
+                            healthScore = formState.healthScore,
+                            description = formState.description,
+                            preOrderEnabled = formState.preOrderEnabled,
+                            imageUrls = uploadedImageUrls
+                        ).getOrThrow()
+                    }
+                    .onSuccess {
+                        publishState = ListingPublishState.Idle
+                        onPublishClick()
+                    }
+                    .onFailure {
+                        publishState = ListingPublishState.Error(R.string.create_listing_error_save_failed)
+                    }
             }
         }
     )

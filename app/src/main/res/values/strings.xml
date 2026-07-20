@@ -32,6 +32,7 @@
     <string name="marketplace_notifications_content_description">Notifikasi</string>
     <string name="marketplace_search_placeholder">Cari hasil panen...</string>
     <string name="marketplace_filter_button_content_description">Filter</string>
+    <string name="marketplace_error_load_failed">Gagal memuat produk. Periksa koneksi internet.</string>
 
     <!-- Peta Marketplace - Pembeli -->
     <string name="map_search_placeholder">Cari lokasi atau nama kebun...</string>
@@ -55,6 +56,8 @@
 
     <!-- Detail Produk - Pembeli -->
     <string name="listing_detail_back_content_description">Kembali</string>
+    <string name="listing_detail_error_load_failed">Gagal memuat detail produk. Periksa koneksi internet.</string>
+    <string name="sensor_chart_empty">Belum ada data sensor untuk periode ini.</string>
     <string name="listing_detail_share_content_description">Bagikan produk</string>
     <string name="listing_detail_favorite_content_description">Tambah ke favorit</string>
     <string name="listing_detail_unfavorite_content_description">Hapus dari favorit</string>
@@ -287,6 +290,8 @@
     <string name="create_listing_publish_button">Publikasikan</string>
     <string name="create_listing_error_no_photo">Tambahkan minimal satu foto produk sebelum publikasi.</string>
     <string name="create_listing_error_upload_failed">Gagal mengunggah foto. Periksa koneksi internet Anda, lalu coba lagi.</string>
+    <string name="create_listing_error_invalid_form">Harga dan jumlah harus berupa angka.</string>
+    <string name="create_listing_error_save_failed">Gagal menyimpan listing. Periksa koneksi internet Anda, lalu coba lagi.</string>
 
     <!-- Riwayat Citra - Petani -->
     <string name="image_history_top_bar_title">Riwayat Citra &amp; Skor AI</string>

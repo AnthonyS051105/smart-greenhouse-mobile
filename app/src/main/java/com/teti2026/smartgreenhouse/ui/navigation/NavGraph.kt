@@ -326,10 +326,10 @@ fun GreenhouseNavGraph(
 
             CreateListingRoute(
                 onBackClick = { navController.popBackStack() },
+                // Dipanggil CreateListingRoute PERSIS SEKALI setelah foto ter-upload ke
+                // Cloudinary DAN listing sungguhan tersimpan ke Firestore (lihat
+                // FirestoreRepository.createListing).
                 onPublishClick = {
-                    // TODO: simpan Listing ke Firestore via FirestoreRepository.createListing
-                    // (MOB-T13) begitu form & upload Cloudinary sungguhan dikerjakan. Untuk
-                    // sekarang langsung kembali ke Dashboard setelah "Publikasikan".
                     navController.popBackStack()
                 },
                 initialFormState = initialFormState

@@ -16,5 +16,10 @@ data class Listing(
     val healthScore: Double,
     val harvestDate: String,
     val status: String,
-    val createdAt: String
+    val createdAt: String,
+    // Field mobile-only (tidak dibaca/ditulis IoT/AI/Backend), lihat data-contracts.md §3.7.
+    val description: String = "",
+    val preOrderEnabled: Boolean = false,
+    val productName: String = "",
+    val imageUrls: List<String> = emptyList()
 )

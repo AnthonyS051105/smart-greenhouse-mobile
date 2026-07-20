@@ -3,6 +3,8 @@ package com.teti2026.smartgreenhouse.repository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.teti2026.smartgreenhouse.data.model.Farm
 import com.teti2026.smartgreenhouse.data.model.Plot
+import com.teti2026.smartgreenhouse.data.model.User
+import com.teti2026.smartgreenhouse.data.model.UserRole
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 
@@ -15,8 +17,33 @@ import java.time.LocalDate
 class FirestoreRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
+    private val usersCollection = firestore.collection("users")
     private val farmsCollection = firestore.collection("farms")
     private val plotsCollection = firestore.collection("plots")
+
+    /** Baca dokumen profil `users/{uid}` (data-contracts.md §3.1) — dipakai layar Profil kedua sisi. */
+    suspend fun getUser(uid: String): Result<User> = runCatching {
+        val snapshot = usersCollection.document(uid).get().await()
+        val roleValue = snapshot.getString("role") ?: error("Dokumen users/$uid tidak punya field role")
+        User(
+            uid = uid,
+            name = snapshot.getString("name").orEmpty(),
+            email = snapshot.getString("email").orEmpty(),
+            role = UserRole.entries.first { it.value == roleValue },
+            createdAt = snapshot.getString("created_at").orEmpty()
+        )
+    }
+
+    /**
+     * Nama kebun (`farms.farm_name`) pertama milik [ownerUid] — dipakai sebagai subjudul layar
+     * Profil Petani ("Pemilik <nama kebun>"). `null` bila petani belum setup kebun sama sekali
+     * (seharusnya tidak terjadi di layar Profil karena Dashboard sudah mensyaratkan farm ada,
+     * tapi tetap ditangani, bukan diasumsikan).
+     */
+    suspend fun getFarmNameForOwner(ownerUid: String): Result<String?> = runCatching {
+        val snapshot = farmsCollection.whereEqualTo("owner_uid", ownerUid).limit(1).get().await()
+        snapshot.documents.firstOrNull()?.getString("farm_name")
+    }
 
     /**
      * Dipakai setelah login untuk menentukan tujuan navigasi Petani (Dashboard vs Setup

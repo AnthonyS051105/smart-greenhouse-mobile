@@ -257,6 +257,10 @@
     <string name="profile_farmer_menu_notifications">Notifikasi</string>
     <string name="profile_farmer_menu_help">Bantuan</string>
     <string name="profile_farmer_menu_logout">Keluar</string>
+    <string name="profile_farmer_role_label_format">Pemilik %1$s</string>
+    <string name="profile_farmer_role_label_fallback">Petani</string>
+    <string name="profile_error_load_failed">Gagal memuat profil. Periksa koneksi internet.</string>
+    <string name="profile_retry_button">Coba Lagi</string>
 
     <!-- Health Score Badge (dipakai lintas screen: Buat Listing, dst) -->
     <string name="health_score_label_good">Baik</string>
@@ -310,6 +314,7 @@
 
     <!-- Profil & Pengaturan - Pembeli -->
     <string name="profile_buyer_title">Profil Saya</string>
+    <string name="profile_buyer_badge_default">Pembeli</string>
     <string name="profile_buyer_avatar_content_description">Foto profil pembeli</string>
     <string name="profile_buyer_edit_avatar_content_description">Ubah foto profil</string>
     <string name="profile_buyer_stat_orders_label">Total Pesanan</string>

@@ -13,11 +13,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.ui.farmer.control.IrrigationControlRoute
 import com.teti2026.smartgreenhouse.ui.farmer.control.ManualModeTopToast
 import com.teti2026.smartgreenhouse.ui.navigation.Routes
 import com.teti2026.smartgreenhouse.ui.farmer.control.VentilationControlRoute
+import com.teti2026.smartgreenhouse.viewmodel.ProfileUiState
+import com.teti2026.smartgreenhouse.viewmodel.ProfileViewModel
 import kotlinx.coroutines.delay
 
 private val CHART_TABS = listOf("Suhu", "Kelembapan", "Tekanan", "Gas")
@@ -33,8 +37,15 @@ private enum class OpenActuatorSheet { IRRIGATION, VENTILATION }
 fun DashboardFarmerRoute(
     onImageHistoryClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-    onBottomNavigate: (String) -> Unit = {}
+    onBottomNavigate: (String) -> Unit = {},
+    profileViewModel: ProfileViewModel = viewModel()
 ) {
+    // Hanya [farmerName] (sapaan header) yang diambil sungguhan dari Firestore `users` — seluruh
+    // data lain di Dashboard (grafik sensor, health_score, aktuator, estimasi panen) masih sampel
+    // statis, menyusul saat MOB-T09 (sensor real-time) dikerjakan terpisah, di luar lingkup Profil.
+    val profileState by profileViewModel.state.collectAsStateWithLifecycle()
+    val farmerName = (profileState as? ProfileUiState.Success)?.user?.name.orEmpty()
+
     var selectedChartTab by remember { mutableStateOf(CHART_TABS.first()) }
     var actuatorItems by remember { mutableStateOf(sampleActuatorItems) }
     // Menekan baris "Irigasi"/"Ventilasi" di kartu Aktuator membuka layar kontrolnya masing-
@@ -60,7 +71,7 @@ fun DashboardFarmerRoute(
 
     Box(modifier = Modifier.fillMaxSize()) {
         DashboardFarmerScreen(
-            farmerName = "Pak Budi",
+            farmerName = farmerName,
             dateLabel = "Jumat, 19 Mei 2023",
             healthScore = 85.0,
             healthScoreTrendLabel = "+5%",

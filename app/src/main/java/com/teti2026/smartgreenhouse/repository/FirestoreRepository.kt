@@ -2,11 +2,19 @@ package com.teti2026.smartgreenhouse.repository
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Filter
+import com.google.firebase.firestore.Query
+import com.teti2026.smartgreenhouse.data.model.ChatMessage
 import com.teti2026.smartgreenhouse.data.model.Farm
 import com.teti2026.smartgreenhouse.data.model.Listing
 import com.teti2026.smartgreenhouse.data.model.Plot
 import com.teti2026.smartgreenhouse.data.model.User
 import com.teti2026.smartgreenhouse.data.model.UserRole
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.time.LocalDate
@@ -24,6 +32,7 @@ class FirestoreRepository(
     private val farmsCollection = firestore.collection("farms")
     private val plotsCollection = firestore.collection("plots")
     private val listingsCollection = firestore.collection("listings")
+    private val chatMessagesCollection = firestore.collection("chat_messages")
 
     /** Baca dokumen profil `users/{uid}` (data-contracts.md §3.1) — dipakai layar Profil kedua sisi. */
     suspend fun getUser(uid: String): Result<User> = runCatching {
@@ -223,6 +232,102 @@ class FirestoreRepository(
     suspend fun getListingById(listingId: String): Result<Listing> = runCatching {
         mapListingDocument(listingsCollection.document(listingId).get().await())
     }
+
+    /**
+     * Listing berstatus "available" milik satu [farmId] — dipakai screen "Produk Lahan - Peta"
+     * (`FarmProductsMapViewModel`). Dua `whereEqualTo` (farm_id + status) TIDAK butuh composite
+     * index tambahan di Firestore Console (kombinasi filter equality-only otomatis didukung index
+     * bawaan, beda dari kombinasi equality+range/orderBy yang perlu index komposit manual).
+     */
+    suspend fun getListingsForFarm(farmId: String): Result<List<Listing>> = runCatching {
+        listingsCollection
+            .whereEqualTo("farm_id", farmId)
+            .whereEqualTo("status", "available")
+            .get().await()
+            .documents.map { mapListingDocument(it) }
+    }
+
+    /**
+     * Listener realtime seluruh pesan satu thread ([threadId] = `chatThreadId(listingId, buyerUid)`,
+     * lihat `util/ChatThreadId.kt`). Filter ganda ke [myUid] via [Filter.or] SECARA LOGIKA tidak
+     * mengubah hasil (tiap pesan di thread ini pasti melibatkan [myUid] sebagai sender ATAU
+     * receiver, by construction) — ditambahkan supaya Firestore Security Rules `chat_messages`
+     * bisa MEMBUKTIKAN query ini aman tanpa composite index: rules mensyaratkan filter eksplisit
+     * ke `sender_uid`/`receiver_uid`, filter `thread_id` saja tidak cukup dibuktikan aman oleh
+     * Firestore meski secara semantik sudah pasti benar (query ditolak permission-denied kalau
+     * filter ini dihapus). Diurutkan CLIENT-SIDE by [ChatMessage.sentAt] (string ISO 8601 UTC,
+     * urut leksikografis = urut waktu) — BUKAN `orderBy` Firestore, supaya kombinasi filter di
+     * atas tetap equality-only (tidak butuh composite index tambahan yang harus dibuat manual di
+     * Firebase Console).
+     */
+    fun getMessagesFlow(threadId: String, myUid: String): Flow<List<ChatMessage>> =
+        chatMessagesQueryFlow(
+            chatMessagesCollection
+                .whereEqualTo("thread_id", threadId)
+                .where(Filter.or(Filter.equalTo("sender_uid", myUid), Filter.equalTo("receiver_uid", myUid)))
+        ).map { messages -> messages.sortedBy { it.sentAt } }
+
+    /** Kirim satu pesan baru ke thread [threadId] (lihat `chatThreadId` di `util/ChatThreadId.kt`). */
+    suspend fun sendMessage(
+        threadId: String,
+        listingId: String,
+        senderUid: String,
+        receiverUid: String,
+        message: String
+    ): Result<Unit> = runCatching {
+        val ref = chatMessagesCollection.document()
+        ref.set(
+            mapOf(
+                "id" to ref.id,
+                "thread_id" to threadId,
+                "sender_uid" to senderUid,
+                "receiver_uid" to receiverUid,
+                "listing_id" to listingId,
+                "message" to message,
+                "sent_at" to Instant.now().toString()
+            )
+        ).await()
+    }
+
+    /**
+     * Realtime seluruh `chat_messages` yang melibatkan [uid] (sebagai sender ATAU receiver)
+     * lintas thread — dipakai daftar percakapan (`ChatListViewModel`/`FarmerChatListViewModel`,
+     * dikelompokkan client-side per `thread_id`, ambil pesan terbaru per grup) supaya baris
+     * "pesan terakhir" ikut ter-update live saat lawan bicara membalas, PERSIS seperti thread
+     * individual ([getMessagesFlow]) — sebelumnya (`getMessagesForUser`, sekali baca) ini
+     * dilaporkan user TIDAK ikut ter-update sampai layar dibuka ulang, root cause dari gap
+     * tersebut. Dua listener terpisah (equality TUNGGAL per query, otomatis rule-safe tanpa perlu
+     * [Filter.or]) digabung [combine] + dedup client-side — beda dari [getMessagesFlow] yang bisa
+     * satu listener [Filter.or] karena ada `thread_id` sebagai pembatas bersama; di sini tidak ada
+     * pembatas semacam itu (mencakup SELURUH thread milik [uid]).
+     */
+    fun getMessagesForUserFlow(uid: String): Flow<List<ChatMessage>> {
+        val sentFlow = chatMessagesQueryFlow(chatMessagesCollection.whereEqualTo("sender_uid", uid))
+        val receivedFlow = chatMessagesQueryFlow(chatMessagesCollection.whereEqualTo("receiver_uid", uid))
+        return combine(sentFlow, receivedFlow) { sent, received -> (sent + received).distinctBy { it.id } }
+    }
+
+    /** Listener realtime generik satu [query] `chat_messages` → daftar [ChatMessage], dipakai [getMessagesFlow]/[getMessagesForUserFlow]. */
+    private fun chatMessagesQueryFlow(query: Query): Flow<List<ChatMessage>> = callbackFlow {
+        val registration = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+            trySend(snapshot?.documents.orEmpty().map { mapChatMessageDocument(it) })
+        }
+        awaitClose { registration.remove() }
+    }
+
+    private fun mapChatMessageDocument(doc: DocumentSnapshot): ChatMessage = ChatMessage(
+        id = doc.id,
+        threadId = doc.getString("thread_id").orEmpty(),
+        senderUid = doc.getString("sender_uid").orEmpty(),
+        receiverUid = doc.getString("receiver_uid").orEmpty(),
+        listingId = doc.getString("listing_id").orEmpty(),
+        message = doc.getString("message").orEmpty(),
+        sentAt = doc.getString("sent_at").orEmpty()
+    )
 
     private fun mapListingDocument(doc: DocumentSnapshot): Listing = Listing(
         id = doc.id,

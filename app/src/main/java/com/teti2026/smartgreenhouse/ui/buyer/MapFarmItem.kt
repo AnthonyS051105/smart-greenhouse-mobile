@@ -15,13 +15,19 @@ import com.google.android.gms.maps.model.LatLng
  * yang menampilkan SELURUH listing farm ini (via `listingsForFarm(farm.id)` di
  * `ListingDetailItem.kt`, filter `ListingDetailItem.farmId`) — bukan lagi satu listing utama
  * (`primaryListingId` lama dihapus, superseded).
+ *
+ * [distanceLabel] nullable: `null` berarti belum bisa dihitung (lokasi pembeli belum diketahui —
+ * izin lokasi belum diberikan/GPS belum fix). Field ini SELALU diisi `null` oleh
+ * `Farm.toMapFarmItem()` (data Firestore murni, tidak tahu posisi pembeli) — nilai sungguhan
+ * dihitung & disisipkan di layer UI (`MapRoute`/`FarmProductsMapRoute`, lihat `distanceLabelFrom`
+ * di `MapScreen.kt`) dari lokasi perangkat, bukan bagian dari model data Firestore.
  */
 data class MapFarmItem(
     val id: String,
     val farmName: String,
     val locationLabel: String,
     val position: LatLng,
-    val distanceLabel: String,
+    val distanceLabel: String?,
     val rating: Double?,
     val imageUrl: String?,
     val imageContentDescription: String?,

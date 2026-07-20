@@ -218,11 +218,11 @@ private fun FarmProductsBottomSheet(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = stringResource(
-                                R.string.farm_products_location_distance_format,
-                                farm.locationLabel,
-                                farm.distanceLabel
-                            ),
+                            // distanceLabel null (lokasi pembeli belum diketahui) → tampilkan
+                            // locationLabel saja, tanpa separator "•" yang menggantung.
+                            text = farm.distanceLabel?.let {
+                                stringResource(R.string.farm_products_location_distance_format, farm.locationLabel, it)
+                            } ?: farm.locationLabel,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(start = 4.dp)

@@ -47,12 +47,14 @@
     <string name="map_see_all_button">Lihat Semua Produk</string>
     <string name="map_rating_content_description">Rating %1$s</string>
     <string name="map_farm_image_placeholder_content_description">Belum ada foto kebun</string>
+    <string name="map_error_load_failed">Gagal memuat kebun. Periksa koneksi internet.</string>
 
     <!-- Produk Lahan - Peta (Pembeli) -->
     <string name="farm_products_back_content_description">Kembali ke Peta Marketplace</string>
     <string name="farm_products_location_distance_format">%1$s • %2$s</string>
     <string name="farm_products_cta_see_all">Lihat Semua Produk</string>
     <string name="farm_products_image_placeholder_content_description">Belum ada foto produk</string>
+    <string name="farm_products_error_load_failed">Gagal memuat produk kebun. Periksa koneksi internet.</string>
 
     <!-- Detail Produk - Pembeli -->
     <string name="listing_detail_back_content_description">Kembali</string>
@@ -200,6 +202,7 @@
     <string name="chat_attachment_content_description">Lampirkan file</string>
     <string name="chat_message_input_placeholder">Ketik pesan...</string>
     <string name="chat_send_content_description">Kirim pesan</string>
+    <string name="chat_error_load_failed">Gagal memuat percakapan. Periksa koneksi internet.</string>
 
     <!-- Pesan - Petani (daftar percakapan + chat negosiasi sisi petani) -->
     <string name="chat_list_title">Pesan</string>
@@ -208,6 +211,7 @@
     <string name="chat_negotiating_with">Bernegosiasi dengan %1$s</string>
     <string name="chat_quick_reply_farmer_accept">Setuju</string>
     <string name="chat_quick_reply_farmer_stock_available">Stok Tersedia</string>
+    <string name="chat_list_error_load_failed">Gagal memuat daftar pesan. Periksa koneksi internet.</string>
 
     <!-- Pesan - Pembeli (daftar percakapan sisi pembeli, tab bawah "Pesan") -->
     <string name="chat_list_buyer_empty">Belum ada percakapan dengan petani.</string>

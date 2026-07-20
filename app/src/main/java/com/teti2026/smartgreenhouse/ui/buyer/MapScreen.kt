@@ -3,6 +3,7 @@ package com.teti2026.smartgreenhouse.ui.buyer
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.location.LocationManager
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -171,7 +172,7 @@ fun MapScreen(
             MyLocationButton(
                 onClick = {
                     if (hasLocationPermission) {
-                        recenterToLastKnownLocation(context) { latLng ->
+                        lastKnownLocation(context)?.let { latLng ->
                             coroutineScope.launch {
                                 cameraPositionState.animate(
                                     CameraUpdateFactory.newLatLngZoom(latLng, MAP_MY_LOCATION_ZOOM)
@@ -197,18 +198,34 @@ fun MapScreen(
     }
 }
 
-/** Membaca lokasi terakhir dari provider yang tersedia, tanpa dependensi FusedLocationProviderClient. */
-private fun recenterToLastKnownLocation(context: Context, onLocationFound: (LatLng) -> Unit) {
+/**
+ * Lokasi terakhir dari provider yang tersedia (GPS/Network), tanpa dependensi
+ * FusedLocationProviderClient. Null bila izin belum diberikan/belum ada fix sama sekali.
+ * Internal (bukan private) — dipakai ulang [MapRoute]/[FarmProductsMapRoute] untuk menghitung
+ * [distanceLabelFrom] bagi [MapFarmItem.distanceLabel].
+ */
+internal fun lastKnownLocation(context: Context): LatLng? {
     if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-        return
+        return null
     }
-    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return
-    val location = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+    val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
+    return listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
         .mapNotNull { provider -> runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull() }
         .firstOrNull()
-    if (location != null) {
-        onLocationFound(LatLng(location.latitude, location.longitude))
-    }
+        ?.let { LatLng(it.latitude, it.longitude) }
+}
+
+/**
+ * Jarak lurus (bukan rute jalan, sekadar estimasi cepat) dari [userLocation] pembeli ke [target]
+ * kebun, format "1.2 km". Null bila [userLocation] belum diketahui — dipakai [MapRoute]/
+ * [FarmProductsMapRoute] untuk mengisi [MapFarmItem.distanceLabel] di layer UI (bukan ViewModel/
+ * Firestore) karena bergantung sensor lokasi PERANGKAT saat ini, lihat catatan di [MapFarmItem].
+ */
+internal fun distanceLabelFrom(userLocation: LatLng?, target: LatLng): String? {
+    if (userLocation == null) return null
+    val results = FloatArray(1)
+    Location.distanceBetween(userLocation.latitude, userLocation.longitude, target.latitude, target.longitude, results)
+    return "%.1f km".format(results[0] / 1000f)
 }
 
 /**
@@ -548,7 +565,10 @@ private fun NearbyFarmCard(farm: MapFarmItem, onClick: () -> Unit, modifier: Mod
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = farm.distanceLabel,
+                        // Fallback ke locationLabel (nama kota) saat distanceLabel belum bisa
+                        // dihitung (lokasi pembeli belum diketahui) — tetap ada informasi
+                        // lokasi yang ditampilkan, bukan baris kosong.
+                        text = farm.distanceLabel ?: farm.locationLabel,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 2.dp)

@@ -1,11 +1,11 @@
 package com.teti2026.smartgreenhouse.util
 
-import com.google.android.gms.maps.model.LatLng
 import com.teti2026.smartgreenhouse.data.model.Farm
 import com.teti2026.smartgreenhouse.data.model.Listing
 import com.teti2026.smartgreenhouse.data.model.User
 import com.teti2026.smartgreenhouse.ui.buyer.ListingDetailItem
 import com.teti2026.smartgreenhouse.ui.buyer.MapFarmItem
+import org.maplibre.spatialk.geojson.Position
 
 /**
  * Gabungan [Listing] + [Farm] (pemilik) + [User] (penjual) menjadi [ListingDetailItem] — dipakai
@@ -54,7 +54,7 @@ fun Farm.toMapFarmItem(listings: List<Listing>): MapFarmItem = MapFarmItem(
     id = id,
     farmName = farmName,
     locationLabel = "%.4f, %.4f".format(locationLat, locationLng),
-    position = LatLng(locationLat, locationLng),
+    position = Position(latitude = locationLat, longitude = locationLng),
     distanceLabel = null,
     rating = null,
     imageUrl = listings.firstNotNullOfOrNull { it.imageUrls.firstOrNull() },

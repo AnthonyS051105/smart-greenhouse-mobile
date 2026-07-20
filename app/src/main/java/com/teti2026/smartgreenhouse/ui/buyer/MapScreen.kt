@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -59,36 +61,40 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.MarkerComposable
-import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.ui.navigation.BuyerBottomNavBar
 import com.teti2026.smartgreenhouse.ui.navigation.Routes
 import com.teti2026.smartgreenhouse.ui.theme.SmartgreenhousemobileTheme
 import kotlinx.coroutines.launch
+import org.maplibre.compose.camera.CameraPosition
+import org.maplibre.compose.camera.CameraState
+import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.map.MapOptions
+import org.maplibre.compose.map.MaplibreMap
+import org.maplibre.compose.map.OrnamentOptions
+import org.maplibre.compose.style.BaseStyle
+import org.maplibre.spatialk.geojson.Position
 
-// internal (bukan private): dipakai ulang oleh FarmProductsMapScreen (screen "Produk Lahan - Peta")
-// agar kamera awal & level zoom konsisten dengan screen ini.
-internal val MAP_DEFAULT_CENTER = LatLng(-7.8014, 110.3644)
-internal const val MAP_DEFAULT_ZOOM = 13f
-internal const val MAP_MY_LOCATION_ZOOM = 15f
-internal const val MAP_FARM_FOCUS_ZOOM = 16f
+// internal (bukan private): dipakai ulang oleh FarmProductsMapScreen & GreenhouseSetupLocationScreen
+// agar kamera awal, level zoom, dan sumber tile konsisten di seluruh screen peta.
+internal val MAP_DEFAULT_CENTER = Position(latitude = -7.8014, longitude = 110.3644)
+internal const val MAP_DEFAULT_ZOOM = 13.0
+internal const val MAP_MY_LOCATION_ZOOM = 15.0
+internal const val MAP_FARM_FOCUS_ZOOM = 16.0
+
+// Tile vector gratis dari OpenFreeMap — TANPA API key, TANPA daftar akun, hosting gratis-selamanya
+// (lihat docs/Architecture.md ADR-08). Pengganti Google Maps SDK.
+internal const val MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 
 /**
  * Layar "Peta Marketplace - Pembeli" dari Stitch. Stateless: seluruh data & event di-hoist ke
  * caller (nantinya MapViewModel + FirestoreRepository.getFarmsForMap(), lihat `docs/SDD.md §4.2/§5`).
  *
- * Catatan: [rememberCameraPositionState] & pembacaan lokasi perangkat sengaja dibiarkan di
+ * Catatan: [rememberCameraState] & pembacaan lokasi perangkat sengaja dibiarkan di
  * composable ini (bukan di-hoist) karena itu state mekanis milik peta (analog LazyListState),
  * bukan state domain/UI-hasil-bisnis — sejalan dengan konvensi Compose Maps.
  */
@@ -110,9 +116,9 @@ fun MapScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM)
-    }
+    val camera = rememberCameraState(
+        firstPosition = CameraPosition(target = MAP_DEFAULT_CENTER, zoom = MAP_DEFAULT_ZOOM)
+    )
 
     Scaffold(
         modifier = modifier,
@@ -128,29 +134,26 @@ fun MapScreen(
                 .fillMaxSize()
                 .padding(bottom = innerPadding.calculateBottomPadding())
         ) {
-            GoogleMap(
+            MaplibreMap(
                 modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
-                uiSettings = MapUiSettings(
-                    zoomControlsEnabled = false,
-                    myLocationButtonEnabled = false,
-                    mapToolbarEnabled = false,
-                    compassEnabled = false
-                )
-            ) {
-                farms.forEach { farm ->
-                    MarkerComposable(
-                        keys = arrayOf(farm.id),
-                        state = rememberUpdatedMarkerState(position = farm.position),
-                        title = farm.farmName,
-                        onClick = {
-                            onFarmClick(farm.id)
-                            true
-                        }
-                    ) {
-                        FarmMapMarker(contentDescription = stringResource(R.string.map_marker_content_description, farm.farmName))
-                    }
+                baseStyle = BaseStyle.Uri(MAP_STYLE_URL),
+                cameraState = camera,
+                options = MapOptions(ornamentOptions = OrnamentOptions(isCompassEnabled = false))
+            )
+
+            // MapLibre Compose belum punya marker/annotation Composable bawaan (beda dari
+            // MarkerComposable milik maps-compose Google Maps yang dulu dipakai di sini) — overlay
+            // manual berbasis proyeksi kamera ([MapMarkerOverlay]) adalah padanannya.
+            farms.forEach { farm ->
+                MapMarkerOverlay(
+                    cameraState = camera,
+                    position = farm.position,
+                    anchorSize = FARM_MARKER_SIZE
+                ) {
+                    FarmMapMarker(
+                        contentDescription = stringResource(R.string.map_marker_content_description, farm.farmName),
+                        modifier = Modifier.clickable { onFarmClick(farm.id) }
+                    )
                 }
             }
 
@@ -172,10 +175,13 @@ fun MapScreen(
             MyLocationButton(
                 onClick = {
                     if (hasLocationPermission) {
-                        lastKnownLocation(context)?.let { latLng ->
+                        lastKnownLocation(context)?.let { position ->
                             coroutineScope.launch {
-                                cameraPositionState.animate(
-                                    CameraUpdateFactory.newLatLngZoom(latLng, MAP_MY_LOCATION_ZOOM)
+                                camera.animateTo(
+                                    finalPosition = camera.position.copy(
+                                        target = position,
+                                        zoom = MAP_MY_LOCATION_ZOOM
+                                    )
                                 )
                             }
                         }
@@ -204,7 +210,7 @@ fun MapScreen(
  * Internal (bukan private) — dipakai ulang [MapRoute]/[FarmProductsMapRoute] untuk menghitung
  * [distanceLabelFrom] bagi [MapFarmItem.distanceLabel].
  */
-internal fun lastKnownLocation(context: Context): LatLng? {
+internal fun lastKnownLocation(context: Context): Position? {
     if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
         return null
     }
@@ -212,7 +218,7 @@ internal fun lastKnownLocation(context: Context): LatLng? {
     return listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
         .mapNotNull { provider -> runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull() }
         .firstOrNull()
-        ?.let { LatLng(it.latitude, it.longitude) }
+        ?.let { Position(latitude = it.latitude, longitude = it.longitude) }
 }
 
 /**
@@ -221,11 +227,50 @@ internal fun lastKnownLocation(context: Context): LatLng? {
  * [FarmProductsMapRoute] untuk mengisi [MapFarmItem.distanceLabel] di layer UI (bukan ViewModel/
  * Firestore) karena bergantung sensor lokasi PERANGKAT saat ini, lihat catatan di [MapFarmItem].
  */
-internal fun distanceLabelFrom(userLocation: LatLng?, target: LatLng): String? {
+internal fun distanceLabelFrom(userLocation: Position?, target: Position): String? {
     if (userLocation == null) return null
     val results = FloatArray(1)
     Location.distanceBetween(userLocation.latitude, userLocation.longitude, target.latitude, target.longitude, results)
     return "%.1f km".format(results[0] / 1000f)
+}
+
+/** Ukuran (dp) marker kebun default — dipakai [MapScreen] untuk menghitung offset penjangkaran
+ * [MapMarkerOverlay] agar pusat marker (bukan pojok kiri-atas) tepat di titik koordinat kebun. */
+internal val FARM_MARKER_SIZE: Dp = 40.dp
+
+/** Ukuran (dp) marker kebun ber-status [FarmMapMarker.selected] (dipakai `FarmProductsMapScreen`). */
+internal val FARM_MARKER_SELECTED_SIZE: Dp = 48.dp
+
+/**
+ * Overlay Composable diposisikan di titik [position] pada peta — padanan manual `MarkerComposable`
+ * milik maps-compose (Google Maps), yang TIDAK ada ekuivalennya di MapLibre Compose (lihat
+ * `docs/Architecture.md` ADR-08). [anchorSize] = lebar/tinggi [content] agar overlay dipusatkan
+ * TEPAT di [position] (bukan pojok kiri-atas). Pola diadaptasi dari contoh resmi MapLibre Compose
+ * (`maplibre.org/maplibre-compose/interaction` — `cameraState.projection.screenLocationFromPosition`).
+ *
+ * `cameraState.position` dibaca eksplisit (walau nilainya tidak dipakai langsung) HANYA supaya
+ * composable ini ikut recompose setiap kamera berpindah (pan/zoom/[CameraState.animateTo]) —
+ * [org.maplibre.compose.camera.CameraProjection.screenLocationFromPosition] menghitung ulang posisi
+ * layar berdasarkan proyeksi kamera TERKINI, bukan nilai yang di-cache dari komposisi sebelumnya.
+ */
+@Composable
+internal fun MapMarkerOverlay(
+    cameraState: CameraState,
+    position: Position,
+    anchorSize: Dp,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    cameraState.position
+    val screenOffset = cameraState.projection?.screenLocationFromPosition(position) ?: return
+    Box(
+        modifier = modifier.offset(
+            x = screenOffset.x - anchorSize / 2,
+            y = screenOffset.y - anchorSize / 2
+        )
+    ) {
+        content()
+    }
 }
 
 /**

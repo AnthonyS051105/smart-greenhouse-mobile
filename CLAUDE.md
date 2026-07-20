@@ -20,7 +20,7 @@ Antarmuka pengguna. Terhubung ke:
 - **Firebase** (Auth, Firestore, FCM) — langsung via SDK.
 - **Cloudinary** — upload foto produk.
 - **Backend FastAPI** (Railway) — hanya untuk kontrol aktuator, trigger AI, auto-fill health_score, export CSV.
-- **Google Maps** — peta lokasi lahan.
+- **MapLibre + OpenFreeMap** — peta lokasi lahan (BUKAN Google Maps, lihat ADR-08 `docs/Architecture.md`).
 
 **IoT, AI, backend ada di repo terpisah.**
 
@@ -35,7 +35,8 @@ Antarmuka pengguna. Terhubung ke:
 - **Library:**
   - Retrofit + OkHttp (REST ke backend)
   - Firebase SDK (Auth / Firestore / Messaging)
-  - **maps-compose** (`com.google.maps.android:maps-compose`) + Places
+  - **MapLibre Compose** (`org.maplibre.compose:maplibre-compose`) + tile OpenFreeMap — **BUKAN
+    Google Maps** (`maps-compose`/`play-services-maps`), lihat ADR-08 `docs/Architecture.md`
   - Cloudinary SDK
   - **Coil** (`AsyncImage`) — untuk gambar
   - **Vico** atau **YCharts** — grafik sensor (Compose-native)
@@ -69,7 +70,8 @@ Antarmuka pengguna. Terhubung ke:
 4. **Semua request backend** wajib header `Authorization: Bearer <firebase_id_token>`.
 5. **health_score** diterima sebagai angka jadi dari backend — JANGAN hitung sendiri di app.
 6. **UI Bahasa Indonesia**, sederhana untuk petani.
-7. **Jangan pakai library View-based** (MPAndroidChart, Glide, SupportMapFragment) — pakai padanan Compose: Vico/YCharts, Coil, maps-compose.
+7. **Jangan pakai library View-based** (MPAndroidChart, Glide, SupportMapFragment) — pakai padanan Compose: Vico/YCharts, Coil, MapLibre Compose.
+8. **Jangan pakai Google Maps SDK/Places/Geocoding** (`com.google.maps.android:maps-compose`, `com.google.android.gms:play-services-maps`) — diganti **MapLibre Compose** + tile **OpenFreeMap** (gratis, tanpa API key) sejak 2026-07-20. Lihat ADR-08 `docs/Architecture.md` untuk alasan & `ui/buyer/MapScreen.kt` (`MapMarkerOverlay`, `MAP_STYLE_URL`) untuk pola implementasi (marker custom via overlay proyeksi kamera — MapLibre Compose TIDAK punya `MarkerComposable` bawaan seperti maps-compose).
 
 ---
 
@@ -77,7 +79,8 @@ Antarmuka pengguna. Terhubung ke:
 
 ```bash
 # 1. Letakkan google-services.json di app/
-# 2. Isi API key (Maps, Cloudinary, base URL backend) di local.properties / BuildConfig
+# 2. Isi API key (Cloudinary, base URL backend) di local.properties / BuildConfig
+#    (peta TIDAK butuh API key lagi sejak migrasi ke MapLibre + OpenFreeMap)
 # 3. Build & run via Android Studio, atau:
 ./gradlew assembleDebug
 ```
@@ -89,7 +92,7 @@ implementation("androidx.compose.material3:material3")
 implementation("androidx.compose.ui:ui-tooling-preview")
 implementation("androidx.navigation:navigation-compose:<versi>")
 implementation("androidx.lifecycle:lifecycle-runtime-compose:<versi>")   // collectAsStateWithLifecycle
-implementation("com.google.maps.android:maps-compose:<versi>")
+implementation("org.maplibre.compose:maplibre-compose:<versi>")          // peta — tanpa API key
 implementation("io.coil-kt:coil-compose:<versi>")
 // + Firebase BoM, Retrofit, Cloudinary, Vico/YCharts
 ```

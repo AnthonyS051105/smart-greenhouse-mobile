@@ -38,18 +38,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.MarkerComposable
-import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.ui.components.HealthScoreBadge
 import com.teti2026.smartgreenhouse.ui.components.healthScoreTierOf
 import com.teti2026.smartgreenhouse.ui.navigation.BuyerBottomNavBar
 import com.teti2026.smartgreenhouse.ui.navigation.Routes
 import com.teti2026.smartgreenhouse.ui.theme.SmartgreenhousemobileTheme
+import org.maplibre.compose.camera.CameraPosition
+import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.map.MapOptions
+import org.maplibre.compose.map.MaplibreMap
+import org.maplibre.compose.map.OrnamentOptions
+import org.maplibre.compose.style.BaseStyle
 
 /**
  * Layar "Produk Lahan - Peta - Pembeli" (HTML referensi Stitch: "Peta Marketplace - AgriMarket",
@@ -69,9 +69,9 @@ fun FarmProductsMapScreen(
     onBottomNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(farm.position, MAP_FARM_FOCUS_ZOOM)
-    }
+    val camera = rememberCameraState(
+        firstPosition = CameraPosition(target = farm.position, zoom = MAP_FARM_FOCUS_ZOOM)
+    )
 
     Scaffold(
         modifier = modifier,
@@ -87,26 +87,22 @@ fun FarmProductsMapScreen(
                 .fillMaxSize()
                 .padding(bottom = innerPadding.calculateBottomPadding())
         ) {
-            GoogleMap(
+            MaplibreMap(
                 modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(
-                    zoomControlsEnabled = false,
-                    myLocationButtonEnabled = false,
-                    mapToolbarEnabled = false,
-                    compassEnabled = false
-                )
+                baseStyle = BaseStyle.Uri(MAP_STYLE_URL),
+                cameraState = camera,
+                options = MapOptions(ornamentOptions = OrnamentOptions(isCompassEnabled = false))
+            )
+
+            MapMarkerOverlay(
+                cameraState = camera,
+                position = farm.position,
+                anchorSize = FARM_MARKER_SELECTED_SIZE
             ) {
-                MarkerComposable(
-                    keys = arrayOf(farm.id),
-                    state = rememberUpdatedMarkerState(position = farm.position),
-                    title = farm.farmName
-                ) {
-                    FarmMapMarker(
-                        contentDescription = stringResource(R.string.map_marker_content_description, farm.farmName),
-                        selected = true
-                    )
-                }
+                FarmMapMarker(
+                    contentDescription = stringResource(R.string.map_marker_content_description, farm.farmName),
+                    selected = true
+                )
             }
 
             FarmProductsTopBar(

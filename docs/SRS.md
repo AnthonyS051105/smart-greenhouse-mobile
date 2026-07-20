@@ -11,7 +11,7 @@
 Mendefinisikan kebutuhan aplikasi Android dua sisi: **App Petani** (monitoring, kontrol, listing) dan **App Pembeli** (marketplace, chat, checkout, rating, peta).
 
 ### 1.2 Ruang Lingkup
-Satu codebase Android (Kotlin + Jetpack Compose) dengan navigasi berbeda berdasarkan `role` setelah login. Terhubung ke Firebase (Auth, Firestore, FCM), Cloudinary (foto), backend FastAPI (kontrol aktuator & AI), dan Google Maps.
+Satu codebase Android (Kotlin + Jetpack Compose) dengan navigasi berbeda berdasarkan `role` setelah login. Terhubung ke Firebase (Auth, Firestore, FCM), Cloudinary (foto), backend FastAPI (kontrol aktuator & AI), dan peta MapLibre + OpenFreeMap (bukan Google Maps, lihat `shared/Architecture.md` ADR-08).
 
 ### 1.3 Definisi
 Lihat `shared/glossary.md`.
@@ -47,7 +47,7 @@ Aplikasi adalah antarmuka utama pengguna. Petani memantau & menjual; pembeli men
 | ID | Kebutuhan | Prioritas |
 |----|-----------|-----------|
 | MOB-FR-04 | Setup greenhouse: nama, ukuran, jenis tanaman, pairing device. | Wajib |
-| MOB-FR-05 | Tandai lokasi lahan di peta (Google Maps + Places Autocomplete). | Wajib |
+| MOB-FR-05 | Tandai lokasi lahan di peta (MapLibre; pencarian alamat/Places Autocomplete belum diimplementasikan). | Wajib |
 | MOB-FR-06 | Dashboard monitoring: grafik suhu/kelembapan udara/kelembapan tanah/intensitas cahaya real-time (dari Firestore). | Wajib |
 | MOB-FR-07 | Tampilkan status aktuator terkini (ON/OFF, auto/manual). | Wajib |
 | MOB-FR-08 | Kontrol manual override aktuator (via REST API ke backend). | Wajib |
@@ -100,7 +100,7 @@ Aplikasi adalah antarmuka utama pengguna. Petani memantau & menjual; pembeli men
 | FCM | Firebase SDK | Notifikasi |
 | Cloudinary | SDK/upload API | Foto produk |
 | Backend FastAPI | REST (Retrofit) | Kontrol aktuator, trigger AI, auto-fill health_score, export CSV |
-| Google Maps | Maps SDK + Places + Geocoding | Peta & lokasi lahan |
+| OpenFreeMap | MapLibre Compose (tanpa API key) | Peta & lokasi lahan (bukan Google Maps, lihat `shared/Architecture.md` ADR-08) |
 
 > Pembagian jalur lengkap: `shared/Architecture.md §3`.
 

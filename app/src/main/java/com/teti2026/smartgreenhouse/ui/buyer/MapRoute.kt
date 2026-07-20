@@ -15,13 +15,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.android.gms.maps.model.LatLng
 import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.ui.components.ProfileErrorView
 import com.teti2026.smartgreenhouse.ui.components.ProfileLoadingIndicator
 import com.teti2026.smartgreenhouse.ui.navigation.Routes
 import com.teti2026.smartgreenhouse.viewmodel.MapUiState
 import com.teti2026.smartgreenhouse.viewmodel.MapViewModel
+import org.maplibre.spatialk.geojson.Position
 
 // TODO: searchQuery/selectedQuickFilter masih tampilan saja, belum benar-benar memfilter [farms]
 // sungguhan — sama seperti TODO di MarketplaceRoute.
@@ -46,7 +46,7 @@ fun MapRoute(
     // Lokasi pembeli dibaca ULANG setiap kali izin berubah jadi granted (bukan bagian data
     // Firestore) — dipakai untuk mengisi MapFarmItem.distanceLabel di layer UI, lihat
     // distanceLabelFrom (MapScreen.kt).
-    var userLocation by remember { mutableStateOf<LatLng?>(null) }
+    var userLocation by remember { mutableStateOf<Position?>(null) }
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission) {
             userLocation = lastKnownLocation(context)

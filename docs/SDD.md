@@ -218,14 +218,14 @@ NavHost(startDestination = LOGIN)
 | Kartu | `Card` (M3) | listing, status aktuator |
 | Navigasi bawah | `NavigationBar` + `NavigationBarItem` | menu per role |
 | Bottom sheet | `ModalBottomSheet` (M3) | detail farm saat tap marker |
-| Peta | `GoogleMap` dari **maps-compose** | peta marketplace |
+| Peta | `MaplibreMap` dari **MapLibre Compose** (tile OpenFreeMap) | peta marketplace |
 | Grafik | **Vico** / **YCharts** (Compose-native) | grafik sensor |
 | Gambar | `AsyncImage` (**Coil**) | foto tanaman/produk |
 | Badge skor | `Badge` / custom `Surface` berwarna | health_score |
 | Filter | `FilterChip` (M3) | filter marketplace |
 | Feedback | `Snackbar` via `SnackbarHostState` | error/sukses |
 
-> Catatan migrasi: MPAndroidChart (View-based) diganti **Vico/YCharts** (Compose-native); Glide diganti **Coil**; `SupportMapFragment` diganti composable `GoogleMap` dari `maps-compose`.
+> Catatan migrasi: MPAndroidChart (View-based) diganti **Vico/YCharts** (Compose-native); Glide diganti **Coil**; `SupportMapFragment` diganti composable `MaplibreMap` dari **MapLibre Compose** (tile **OpenFreeMap**, gratis tanpa API key — bukan Google Maps SDK/`maps-compose`, diputuskan 2026-07-20, lihat `shared/Architecture.md` ADR-08).
 
 ---
 
@@ -248,7 +248,7 @@ NavHost(startDestination = LOGIN)
 | Kontrol aktuator | Backend REST | hanya backend bisa MQTT |
 | Auto-fill health_score | Backend REST | sebelum simpan listing ke Firestore |
 | Chat | Firestore `chat_messages` | realtime snapshot listener → `Flow` |
-| Peta | Firestore `farms` + maps-compose | marker dari koordinat farm |
+| Peta | Firestore `farms` + MapLibre Compose (OpenFreeMap) | marker dari koordinat farm |
 | Foto produk | Cloudinary | simpan URL ke Firestore |
 | Notifikasi | FCM | token per user |
 

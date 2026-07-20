@@ -8,20 +8,15 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
-// Maps SDK API key dibaca dari local.properties (tidak di-commit, lihat mobile/local.properties)
-// agar tidak hardcode credential di source. Isi MAPS_API_KEY=<key-anda> di local.properties;
-// dapatkan API key gratis (free tier) dari Google Cloud Console → Maps SDK for Android.
 val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
         localPropertiesFile.inputStream().use { load(it) }
     }
 }
-val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
 
 // Cloudinary cloud name & upload preset (unsigned) — dibaca dari local.properties (tidak
-// di-commit) lalu diekspos sebagai BuildConfig field, pola sama seperti mapsApiKey di atas.
-// Lihat CloudinaryRepository.kt untuk cara pakainya.
+// di-commit) lalu diekspos sebagai BuildConfig field. Lihat CloudinaryRepository.kt untuk cara pakainya.
 val cloudinaryCloudName: String = localProperties.getProperty("CLOUDINARY_CLOUD_NAME", "")
 val cloudinaryUploadPreset: String = localProperties.getProperty("CLOUDINARY_UPLOAD_PRESET", "")
 
@@ -46,7 +41,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"$cloudinaryCloudName\"")
         buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"$cloudinaryUploadPreset\"")
         buildConfigField("String", "BACKEND_BASE_URL", "\"$backendBaseUrl\"")
@@ -83,8 +77,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.coil.compose)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.maps.compose)
-    implementation(libs.play.services.maps)
+    // Peta (Peta Marketplace, Produk Lahan, Setup Greenhouse) — MapLibre Compose + tile
+    // OpenFreeMap (gratis, tanpa API key). Renderer OpenGL (bukan Vulkan default) dipakai untuk
+    // kompatibilitas emulator, lihat komentar libs.versions.toml.
+    implementation(libs.maplibre.compose) {
+        exclude(group = "org.maplibre.gl", module = "android-sdk")
+    }
+    implementation(libs.maplibre.android.opengl)
     implementation(libs.vico.compose.m3)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)

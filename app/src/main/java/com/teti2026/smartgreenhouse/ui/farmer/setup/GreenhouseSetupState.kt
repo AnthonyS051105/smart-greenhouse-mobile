@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.maplibre.spatialk.geojson.Position
 
 /** Sesuai pola `UiState` di `docs/SDD.md §5`, dikhususkan untuk hasil submit "Selesai" langkah 3/3. */
 sealed interface SetupSubmitState {
@@ -54,7 +55,7 @@ class GreenhouseSetupStateHolder @JvmOverloads constructor(
         state = state.copy(cropType = value)
     }
 
-    fun updateLocation(location: com.google.android.gms.maps.model.LatLng, label: String) {
+    fun updateLocation(location: Position, label: String) {
         state = state.copy(location = location, locationLabel = label)
     }
 

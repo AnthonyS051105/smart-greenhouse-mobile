@@ -37,10 +37,10 @@ fun GreenhouseSetupLocationRoute(
         locationLabel = stateHolder.state.locationLabel,
         searchQuery = stateHolder.searchQuery,
         onSearchQueryChange = stateHolder::updateSearchQuery,
-        onLocationChanged = { latLng ->
+        onLocationChanged = { position ->
             // TODO: label lokasi sungguhan butuh reverse geocoding (Geocoder/Places API, MOB-T04).
             // Untuk sekarang label memakai koordinat yang dibulatkan sebagai placeholder.
-            stateHolder.updateLocation(latLng, "%.4f, %.4f".format(latLng.latitude, latLng.longitude))
+            stateHolder.updateLocation(position, "%.4f, %.4f".format(position.latitude, position.longitude))
         },
         onBackClick = onBackClick,
         onNextClick = onNextClick

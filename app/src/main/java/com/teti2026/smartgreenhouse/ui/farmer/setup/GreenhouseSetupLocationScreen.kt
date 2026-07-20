@@ -39,20 +39,25 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.rememberCameraPositionState
 import com.teti2026.smartgreenhouse.R
+import com.teti2026.smartgreenhouse.ui.buyer.MAP_STYLE_URL
 import com.teti2026.smartgreenhouse.ui.theme.SmartgreenhousemobileTheme
+import org.maplibre.compose.camera.CameraPosition
+import org.maplibre.compose.camera.rememberCameraState
+import org.maplibre.compose.map.MapOptions
+import org.maplibre.compose.map.MaplibreMap
+import org.maplibre.compose.map.OrnamentOptions
+import org.maplibre.compose.style.BaseStyle
+import org.maplibre.spatialk.geojson.Position
 
-private val DEFAULT_LOCATION = LatLng(-7.5256, 110.6358) // Boyolali, Jawa Tengah — default sesuai desain Stitch
-private const val DEFAULT_ZOOM = 15f
+// Boyolali, Jawa Tengah — default sesuai desain Stitch.
+private val DEFAULT_LOCATION = Position(latitude = -7.5256, longitude = 110.6358)
+private const val DEFAULT_ZOOM = 15.0
 
 /**
  * Langkah 2/3 — Screen "Setup Greenhouse - Lokasi Lahan" dari Stitch. Peta memakai
- * `maps-compose` ([GoogleMap]) dengan pin tetap di tengah layar; menggeser peta memindahkan
+ * **MapLibre Compose** ([MaplibreMap], tile OpenFreeMap — lihat `docs/Architecture.md` ADR-08)
+ * dengan pin tetap di tengah layar; menggeser peta memindahkan
  * titik koordinat (pola "center pin", bukan marker biasa) sesuai instruksi hint desain
  * "Geser peta untuk memindahkan pin". Stateless: [selectedLocation] & [locationLabel]
  * di-hoist ke caller ([GreenhouseSetupRoute]).
@@ -60,23 +65,23 @@ private const val DEFAULT_ZOOM = 15f
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun GreenhouseSetupLocationScreen(
-    selectedLocation: LatLng?,
+    selectedLocation: Position?,
     locationLabel: String,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    onLocationChanged: (LatLng) -> Unit,
+    onLocationChanged: (Position) -> Unit,
     onBackClick: () -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val initialPosition = selectedLocation ?: DEFAULT_LOCATION
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(initialPosition, DEFAULT_ZOOM)
-    }
+    val camera = rememberCameraState(
+        firstPosition = CameraPosition(target = initialPosition, zoom = DEFAULT_ZOOM)
+    )
 
-    LaunchedEffect(cameraPositionState.isMoving) {
-        if (!cameraPositionState.isMoving) {
-            onLocationChanged(cameraPositionState.position.target)
+    LaunchedEffect(camera.isCameraMoving) {
+        if (!camera.isCameraMoving) {
+            onLocationChanged(camera.position.target)
         }
     }
 
@@ -160,15 +165,11 @@ fun GreenhouseSetupLocationScreen(
                     .height(360.dp)
                     .clip(RoundedCornerShape(16.dp))
             ) {
-                GoogleMap(
+                MaplibreMap(
                     modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = cameraPositionState,
-                    uiSettings = MapUiSettings(
-                        zoomControlsEnabled = false,
-                        myLocationButtonEnabled = false,
-                        mapToolbarEnabled = false,
-                        compassEnabled = false
-                    )
+                    baseStyle = BaseStyle.Uri(MAP_STYLE_URL),
+                    cameraState = camera,
+                    options = MapOptions(ornamentOptions = OrnamentOptions(isCompassEnabled = false))
                 )
 
                 MapSearchOverlay(
@@ -205,7 +206,7 @@ fun GreenhouseSetupLocationScreen(
 
             LocationConfirmationCard(
                 locationLabel = locationLabel,
-                coordinate = cameraPositionState.position.target
+                coordinate = camera.position.target
             )
         }
     }
@@ -282,7 +283,7 @@ private fun CenterPin(modifier: Modifier = Modifier) {
 @Composable
 private fun LocationConfirmationCard(
     locationLabel: String,
-    coordinate: LatLng,
+    coordinate: Position,
     modifier: Modifier = Modifier
 ) {
     Surface(

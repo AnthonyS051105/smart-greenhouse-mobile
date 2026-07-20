@@ -39,7 +39,7 @@ Verifikasi / Login berhasil
    ↓
 [Setup Greenhouse]
    - Input: nama greenhouse, ukuran, jenis tanaman
-   - [Tandai Lokasi di Peta]  ← Google Maps + Places Autocomplete
+   - [Tandai Lokasi di Peta]  ← MapLibre (geser peta, bukan Google Maps — lihat `shared/Architecture.md` ADR-08; pencarian alamat/Places Autocomplete belum diimplementasikan)
        · geser pin / cari alamat → simpan lat,lng
    - [Pairing Perangkat]  ← input device_id/pairing code dari OLED
    ↓
@@ -103,7 +103,7 @@ Register (pilih "Pembeli") → Login → [Marketplace]
    - [Chat dengan Petani] | [Beli Sekarang]
 ```
 
-### 4.3 Peta Marketplace (Google Maps)
+### 4.3 Peta Marketplace (MapLibre + OpenFreeMap)
 ```
 [Peta]
    - Marker di tiap lokasi lahan petani (dari Firestore farms)
@@ -162,7 +162,7 @@ Register (pilih "Pembeli") → Login → [Marketplace]
 
 - `LazyColumn` / `LazyVerticalGrid` — daftar listing, chat, riwayat.
 - **Vico** / **YCharts** (Compose-native) — grafik sensor.
-- `GoogleMap` dari **maps-compose** — peta marketplace.
+- `MaplibreMap` dari **MapLibre Compose** (tile **OpenFreeMap**, bukan Google Maps) — peta marketplace.
 - `ModalBottomSheet` (M3) — detail farm saat tap marker.
 - `Card` (M3) — kartu listing & status aktuator.
 - `NavigationBar` + `NavigationBarItem` — navigasi utama per role.

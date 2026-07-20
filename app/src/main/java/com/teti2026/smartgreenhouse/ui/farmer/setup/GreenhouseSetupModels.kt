@@ -1,6 +1,6 @@
 package com.teti2026.smartgreenhouse.ui.farmer.setup
 
-import com.google.android.gms.maps.model.LatLng
+import org.maplibre.spatialk.geojson.Position
 
 /** Opsi jenis tanaman pada dropdown "Data Utama", sesuai desain Stitch. `value` selaras `crop_type`. */
 enum class CropTypeOption(val value: String) {
@@ -19,7 +19,7 @@ data class GreenhouseSetupFormState(
     val greenhouseName: String = "",
     val sizeM2: String = "",
     val cropType: CropTypeOption = CropTypeOption.CABAI_RAWIT,
-    val location: LatLng? = null,
+    val location: Position? = null,
     val locationLabel: String = "",
     val pairingCode: String = ""
 )

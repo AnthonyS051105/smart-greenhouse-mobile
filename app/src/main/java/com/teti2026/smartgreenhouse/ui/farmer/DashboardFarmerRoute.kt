@@ -18,35 +18,55 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teti2026.smartgreenhouse.R
 import com.teti2026.smartgreenhouse.ui.farmer.control.IrrigationControlRoute
 import com.teti2026.smartgreenhouse.ui.farmer.control.ManualModeTopToast
+import com.teti2026.smartgreenhouse.ui.farmer.control.MessageTopToast
 import com.teti2026.smartgreenhouse.ui.navigation.Routes
 import com.teti2026.smartgreenhouse.ui.farmer.control.VentilationControlRoute
+import com.teti2026.smartgreenhouse.viewmodel.DashboardUiState
+import com.teti2026.smartgreenhouse.viewmodel.DashboardViewModel
 import com.teti2026.smartgreenhouse.viewmodel.ProfileUiState
 import com.teti2026.smartgreenhouse.viewmodel.ProfileViewModel
 import kotlinx.coroutines.delay
 
-private val CHART_TABS = listOf("Suhu", "Kelembapan", "Tekanan", "Gas")
+private val CHART_TABS = listOf("Suhu", "Kelembapan Udara", "Kelembapan Tanah", "Cahaya")
+private val CHART_TAB_TO_SENSOR_KEY = mapOf(
+    "Suhu" to "temperature",
+    "Kelembapan Udara" to "humidity",
+    "Kelembapan Tanah" to "soil_moisture",
+    "Cahaya" to "light"
+)
 
 /** Aktuator mana yang sedang dibuka lewat kartu "Aktuator" Dashboard, jika ada. */
 private enum class OpenActuatorSheet { IRRIGATION, VENTILATION }
 
-// TODO: pindahkan state & data ke DashboardViewModel (StateFlow<UiState>) yang mengambil
-// data dari FirestoreRepository.getSensorReadings(plotId, range) begitu MOB-T09 dikerjakan.
-// [onActuatorToggle] untuk sementara hanya mengubah state lokal — nantinya harus memanggil
-// BackendRepository.triggerActuator (POST /irrigation/trigger, override manual).
+// [onActuatorToggle]/mode otomatis di kartu Dashboard ini hanya cerminan visual state terakhir —
+// aksi nyata (trigger servo & polling rekomendasi AI) terjadi di dalam
+// [IrrigationControlRoute]/[VentilationControlRoute] (bottom sheet), yang menerima [plotId]/
+// [deviceId] hasil resolusi [DashboardViewModel] di sini.
 @Composable
 fun DashboardFarmerRoute(
     onImageHistoryClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onBottomNavigate: (String) -> Unit = {},
-    profileViewModel: ProfileViewModel = viewModel()
+    profileViewModel: ProfileViewModel = viewModel(),
+    dashboardViewModel: DashboardViewModel = viewModel()
 ) {
-    // Hanya [farmerName] (sapaan header) yang diambil sungguhan dari Firestore `users` — seluruh
-    // data lain di Dashboard (grafik sensor, health_score, aktuator, estimasi panen) masih sampel
-    // statis, menyusul saat MOB-T09 (sensor real-time) dikerjakan terpisah, di luar lingkup Profil.
+    // Hanya [farmerName] (sapaan header) diambil dari [ProfileViewModel] — grafik sensor & status
+    // aktuator diambil dari [DashboardViewModel] (realtime Firestore `sensor_readings`).
+    // health_score & jadwal panen TETAP sampel statis (belum ada sumber data backend untuk itu).
     val profileState by profileViewModel.state.collectAsStateWithLifecycle()
     val farmerName = (profileState as? ProfileUiState.Success)?.user?.name.orEmpty()
 
+    val dashboardState by dashboardViewModel.state.collectAsStateWithLifecycle()
+    val dashboardSuccess = dashboardState as? DashboardUiState.Success
+    val plotId = dashboardSuccess?.plot?.id
+    val deviceId = dashboardSuccess?.deviceId
+    val sensorItems = dashboardSuccess?.sensorItems ?: sampleSensorItems
+
     var selectedChartTab by remember { mutableStateOf(CHART_TABS.first()) }
+    val chartPoints = dashboardSuccess?.chartPointsBySensor
+        ?.get(CHART_TAB_TO_SENSOR_KEY[selectedChartTab])
+        ?.takeIf { it.isNotEmpty() }
+        ?: sampleTrendChartPoints
     var actuatorItems by remember { mutableStateOf(sampleActuatorItems) }
     // Menekan baris "Irigasi"/"Ventilasi" di kartu Aktuator membuka layar kontrolnya masing-
     // masing sebagai `ModalBottomSheet` overlay DI ATAS Dashboard — pola sama seperti
@@ -69,17 +89,29 @@ fun DashboardFarmerRoute(
         }
     }
 
+    // Toast error trigger aktuator (`POST /irrigation/trigger` gagal) — pola sama seperti toast
+    // mode manual di atas (root Dashboard, bukan di dalam sheet), pesan bebas lewat [MessageTopToast].
+    var errorToastMessage by remember { mutableStateOf<String?>(null) }
+    var errorToastVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(errorToastMessage) {
+        if (errorToastMessage != null) {
+            errorToastVisible = true
+            delay(2500)
+            errorToastVisible = false
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         DashboardFarmerScreen(
             farmerName = farmerName,
             dateLabel = "Jumat, 19 Mei 2023",
             healthScore = 85.0,
             healthScoreTrendLabel = "+5%",
-            sensorItems = sampleSensorItems,
+            sensorItems = sensorItems,
             chartTabs = CHART_TABS,
             selectedChartTab = selectedChartTab,
             onChartTabSelected = { selectedChartTab = it },
-            chartPoints = sampleTrendChartPoints,
+            chartPoints = chartPoints,
             harvestDays = sampleHarvestDays,
             harvestPlotLabel = "Cabai Rawit — Plot A",
             harvestEstimateLabel = "24 Mei",
@@ -104,16 +136,24 @@ fun DashboardFarmerRoute(
             onBottomNavigate = onBottomNavigate
         )
 
-        when (openActuatorSheet) {
-            OpenActuatorSheet.IRRIGATION -> IrrigationControlRoute(
-                onDismiss = { openActuatorSheet = null },
-                onManualModeActivated = { manualToastTrigger++ }
-            )
-            OpenActuatorSheet.VENTILATION -> VentilationControlRoute(
-                onDismiss = { openActuatorSheet = null },
-                onManualModeActivated = { manualToastTrigger++ }
-            )
-            null -> Unit
+        if (plotId != null && deviceId != null) {
+            when (openActuatorSheet) {
+                OpenActuatorSheet.IRRIGATION -> IrrigationControlRoute(
+                    plotId = plotId,
+                    deviceId = deviceId,
+                    onDismiss = { openActuatorSheet = null },
+                    onManualModeActivated = { manualToastTrigger++ },
+                    onTriggerError = { message -> errorToastMessage = message }
+                )
+                OpenActuatorSheet.VENTILATION -> VentilationControlRoute(
+                    plotId = plotId,
+                    deviceId = deviceId,
+                    onDismiss = { openActuatorSheet = null },
+                    onManualModeActivated = { manualToastTrigger++ },
+                    onTriggerError = { message -> errorToastMessage = message }
+                )
+                null -> Unit
+            }
         }
 
         // Toast ditaruh PALING TERAKHIR dalam Box supaya digambar di lapisan paling atas,
@@ -121,6 +161,14 @@ fun DashboardFarmerRoute(
         // memastikan tidak tertutup status bar, benar-benar di puncak layar HP.
         ManualModeTopToast(
             visible = manualToastVisible,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 8.dp)
+        )
+        MessageTopToast(
+            message = errorToastMessage.orEmpty(),
+            visible = errorToastVisible,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()

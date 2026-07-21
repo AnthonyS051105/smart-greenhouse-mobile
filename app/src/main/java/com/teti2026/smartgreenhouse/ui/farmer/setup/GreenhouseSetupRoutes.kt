@@ -72,6 +72,8 @@ fun GreenhouseSetupPairingRoute(
     GreenhouseSetupPairingScreen(
         pairingCode = stateHolder.state.pairingCode,
         onPairingCodeChange = stateHolder::updatePairingCode,
+        plotId = stateHolder.state.plotId,
+        onPlotIdChange = stateHolder::updatePlotId,
         onBackClick = onBackClick,
         onFinishClick = stateHolder::submit,
         onHelpClick = { /* TODO: navigasi ke bantuan/FAQ pairing perangkat */ },

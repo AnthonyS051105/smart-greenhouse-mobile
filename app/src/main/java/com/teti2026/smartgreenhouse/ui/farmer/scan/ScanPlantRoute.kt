@@ -10,6 +10,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,25 +29,33 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.teti2026.smartgreenhouse.R
+import com.teti2026.smartgreenhouse.repository.BackendRepository
+import com.teti2026.smartgreenhouse.ui.farmer.control.MessageTopToast
 import com.teti2026.smartgreenhouse.ui.farmer.history.ImageHealthCategory
 import kotlinx.coroutines.delay
 
 /**
  * Route "Pindai Tanaman": state machine linear Viewfinder -> Menganalisis -> Hasil Analisis untuk
- * pindaian tanaman on-demand lewat kamera HP (bukan siklus ESP32-CAM), dipakai petani yang ingin
- * tahu `health_score` seketika saat melihat gejala penyakit di lapangan (lihat diskusi sebelum
- * fitur ini dibuat).
+ * pindaian tanaman on-demand lewat kamera HP (bukan siklus ESP32-CAM, yang hardware-nya rusak dan
+ * di luar lingkup wiring ini sama sekali), dipakai petani yang ingin tahu kematangan buah seketika
+ * di lapangan.
  *
- * TODO (MOB-T09/T10): [analyzeScan] mensimulasikan `POST /vision/analyze`
- * (`docs/data-contracts.md §4.5`) dengan delay + data sampel tetap — ganti dengan panggilan
- * BackendRepository sungguhan begitu endpoint vision analysis dikerjakan. Pola ini konsisten
- * dengan "screen dulu, wiring data nanti" yang dipakai seluruh screen lain sejauh ini.
+ * Memanggil `POST /vision/analyze` sungguhan lewat [BackendRepository] dengan `file`
+ * foto kamera HP langsung (TANPA `image_id`) — model yang ada hanya klasifikasi kematangan buah
+ * (`ripeness_class`: Overipe/Ripe/Unripe), BUKAN model penyakit tanaman (`disease_class` belum ada
+ * modelnya di backend/AI manapun). [category]/[healthLabel] pada [ScanAnalysisResult] karena itu
+ * diturunkan dari `ripeness_class` sebagai proksi (Ripe→GOOD, Unripe→MEDIUM, Overipe→SICK), BUKAN
+ * hasil deteksi penyakit sungguhan. [healthScore] dihitung dengan formula yang sama seperti
+ * `POST /listings/auto-fill-health-score` di backend (`Ripe`=100/`Unripe`=70/`Overipe`=40 × confidence)
+ * karena jalur `file` langsung ini tidak mem-persist ke `crop_images` sehingga tidak bisa memanggil
+ * endpoint tersebut secara terpisah.
  */
 @Composable
 fun ScanPlantRoute(
     onCloseClick: () -> Unit,
     onSaveToHistoryClick: (ScanAnalysisResult) -> Unit,
-    onCreateListingClick: (ScanAnalysisResult) -> Unit
+    onCreateListingClick: (ScanAnalysisResult) -> Unit,
+    backendRepository: BackendRepository = BackendRepository()
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -61,6 +70,7 @@ fun ScanPlantRoute(
     var isFlashOn by remember { mutableStateOf(false) }
     var scannedImageUri by remember { mutableStateOf<Uri?>(null) }
     var analysisResult by remember { mutableStateOf<ScanAnalysisResult?>(null) }
+    var analysisErrorMessage by remember { mutableStateOf<String?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -95,60 +105,93 @@ fun ScanPlantRoute(
     LaunchedEffect(stage) {
         if (stage == ScanPlantStage.ANALYZING) {
             val uri = scannedImageUri ?: return@LaunchedEffect
-            analysisResult = analyzeScan(uri)
-            delay(SIMULATED_ANALYSIS_DELAY_MS)
-            stage = ScanPlantStage.RESULT
+            val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes == null) {
+                analysisErrorMessage = context.getString(R.string.scan_analysis_error)
+                stage = ScanPlantStage.VIEWFINDER
+                return@LaunchedEffect
+            }
+            backendRepository.analyzeVisionFile(bytes, mimeType)
+                .onSuccess { vision ->
+                    analysisResult = toScanAnalysisResult(uri, vision.ripenessClass, vision.confidenceScore)
+                    stage = ScanPlantStage.RESULT
+                }
+                .onFailure {
+                    analysisErrorMessage = context.getString(R.string.scan_analysis_error)
+                    stage = ScanPlantStage.VIEWFINDER
+                }
         }
     }
 
-    when (stage) {
-        ScanPlantStage.VIEWFINDER -> {
-            if (hasCameraPermission) {
-                ScanPlantViewfinderScreen(
-                    previewView = previewView,
-                    isFlashOn = isFlashOn,
-                    onFlashToggle = { isFlashOn = !isFlashOn },
-                    onSwitchCameraClick = {
-                        cameraController.toggleLensFacing(previewView) { /* TODO: Snackbar error */ }
-                    },
-                    onGalleryClick = {
-                        galleryPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                    onCloseClick = onCloseClick,
-                    onShutterClick = {
-                        cameraController.takePhoto(
-                            onSuccess = { uri ->
-                                scannedImageUri = uri
-                                stage = ScanPlantStage.ANALYZING
-                            },
-                            onError = { /* TODO: tampilkan Snackbar error pengambilan foto */ }
-                        )
-                    }
-                )
-            } else {
-                CameraPermissionRequiredContent()
+    var errorToastVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(analysisErrorMessage) {
+        if (analysisErrorMessage != null) {
+            errorToastVisible = true
+            delay(2500)
+            errorToastVisible = false
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (stage) {
+            ScanPlantStage.VIEWFINDER -> {
+                if (hasCameraPermission) {
+                    ScanPlantViewfinderScreen(
+                        previewView = previewView,
+                        isFlashOn = isFlashOn,
+                        onFlashToggle = { isFlashOn = !isFlashOn },
+                        onSwitchCameraClick = {
+                            cameraController.toggleLensFacing(previewView) { /* TODO: Snackbar error */ }
+                        },
+                        onGalleryClick = {
+                            galleryPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        onCloseClick = onCloseClick,
+                        onShutterClick = {
+                            cameraController.takePhoto(
+                                onSuccess = { uri ->
+                                    scannedImageUri = uri
+                                    stage = ScanPlantStage.ANALYZING
+                                },
+                                onError = { /* TODO: tampilkan Snackbar error pengambilan foto */ }
+                            )
+                        }
+                    )
+                } else {
+                    CameraPermissionRequiredContent()
+                }
+            }
+            ScanPlantStage.ANALYZING -> {
+                scannedImageUri?.let { uri -> ScanPlantAnalyzingScreen(scannedImageUri = uri) }
+            }
+            ScanPlantStage.RESULT -> {
+                analysisResult?.let { result ->
+                    ScanPlantResultScreen(
+                        result = result,
+                        onBackClick = onCloseClick,
+                        onSaveToHistoryClick = { onSaveToHistoryClick(result) },
+                        onCreateListingClick = { onCreateListingClick(result) },
+                        onScanAgainClick = {
+                            scannedImageUri = null
+                            analysisResult = null
+                            stage = ScanPlantStage.VIEWFINDER
+                        }
+                    )
+                }
             }
         }
-        ScanPlantStage.ANALYZING -> {
-            scannedImageUri?.let { uri -> ScanPlantAnalyzingScreen(scannedImageUri = uri) }
-        }
-        ScanPlantStage.RESULT -> {
-            analysisResult?.let { result ->
-                ScanPlantResultScreen(
-                    result = result,
-                    onBackClick = onCloseClick,
-                    onSaveToHistoryClick = { onSaveToHistoryClick(result) },
-                    onCreateListingClick = { onCreateListingClick(result) },
-                    onScanAgainClick = {
-                        scannedImageUri = null
-                        analysisResult = null
-                        stage = ScanPlantStage.VIEWFINDER
-                    }
-                )
-            }
-        }
+
+        MessageTopToast(
+            message = analysisErrorMessage.orEmpty(),
+            visible = errorToastVisible,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 8.dp)
+        )
     }
 }
 
@@ -165,21 +208,49 @@ private fun CameraPermissionRequiredContent() {
     }
 }
 
-private const val SIMULATED_ANALYSIS_DELAY_MS = 2500L
+/** `Ripe`=100/`Unripe`=70/`Overipe`=40 — sama seperti `RIPENESS_HEALTH_SCORE` backend
+ * (`app/routers/ai.py`, dipakai `POST /listings/auto-fill-health-score`). Base 50 untuk nilai
+ * `ripeness_class` di luar 3 ini (mengikuti fallback backend). */
+private val RIPENESS_BASE_SCORE = mapOf(
+    "Ripe" to 100,
+    "Unripe" to 70,
+    "Overipe" to 40
+)
+
+private val RIPENESS_LABEL_ID = mapOf(
+    "Ripe" to "Matang",
+    "Unripe" to "Belum Matang",
+    "Overipe" to "Terlalu Matang"
+)
 
 /**
- * Simulasi `POST /vision/analyze` (`docs/data-contracts.md §4.5`) — hasil tetap (bukan
- * dipanggil dari backend sungguhan), konsisten data sampel dipakai seluruh flow "screen dulu,
- * wiring data nanti".
+ * Petakan hasil `POST /vision/analyze` (`ripeness_class`/`confidence_score`) ke [ScanAnalysisResult].
+ * TIDAK ada model penyakit tanaman yang berjalan (`disease_class` belum diimplementasikan di
+ * manapun) — [category]/[healthLabel] diturunkan dari [ripenessClass] sebagai proksi kesehatan
+ * visual, bukan diagnosis penyakit sungguhan.
  */
-private suspend fun analyzeScan(imageUri: Uri): ScanAnalysisResult {
+private fun toScanAnalysisResult(
+    imageUri: Uri,
+    ripenessClass: String,
+    confidenceScore: Double
+): ScanAnalysisResult {
+    val baseScore = RIPENESS_BASE_SCORE[ripenessClass] ?: 50
+    val category = when (ripenessClass) {
+        "Ripe" -> ImageHealthCategory.GOOD
+        "Unripe" -> ImageHealthCategory.MEDIUM
+        else -> ImageHealthCategory.SICK
+    }
     return ScanAnalysisResult(
         imageUri = imageUri,
-        category = ImageHealthCategory.GOOD,
-        healthScore = 87.0,
-        ripenessLabel = "Matang",
-        healthLabel = "Sehat",
-        confidenceScore = 0.94,
+        category = category,
+        healthScore = (baseScore * confidenceScore).let { Math.round(it).toDouble() },
+        ripenessLabel = RIPENESS_LABEL_ID[ripenessClass] ?: ripenessClass,
+        healthLabel = when (category) {
+            ImageHealthCategory.GOOD -> "Sehat"
+            ImageHealthCategory.MEDIUM -> "Perlu Perhatian"
+            ImageHealthCategory.SICK -> "Kurang Sehat"
+        },
+        confidenceScore = confidenceScore,
         productName = "Cabai Rawit Merah"
     )
 }

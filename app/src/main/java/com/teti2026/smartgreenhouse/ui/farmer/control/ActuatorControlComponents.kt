@@ -202,6 +202,20 @@ fun ManualModeInfoDialog(onDismiss: () -> Unit) {
  */
 @Composable
 fun ManualModeTopToast(visible: Boolean, modifier: Modifier = Modifier) {
+    MessageTopToast(
+        message = stringResource(R.string.actuator_control_manual_warning),
+        visible = visible,
+        modifier = modifier
+    )
+}
+
+/**
+ * Toast generik puncak layar (pesan bebas) — dipakai [ManualModeTopToast] dan juga error trigger
+ * aktuator (`POST /irrigation/trigger` gagal) dari [com.teti2026.smartgreenhouse.ui.farmer.
+ * DashboardFarmerRoute], pola tampilan identik.
+ */
+@Composable
+fun MessageTopToast(message: String, visible: Boolean, modifier: Modifier = Modifier) {
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
@@ -228,7 +242,7 @@ fun ManualModeTopToast(visible: Boolean, modifier: Modifier = Modifier) {
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = stringResource(R.string.actuator_control_manual_warning),
+                    text = message,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.inverseOnSurface,
                     modifier = Modifier.padding(start = 8.dp)

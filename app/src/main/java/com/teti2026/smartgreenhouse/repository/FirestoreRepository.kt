@@ -10,6 +10,7 @@ import com.teti2026.smartgreenhouse.data.model.Listing
 import com.teti2026.smartgreenhouse.data.model.Order
 import com.teti2026.smartgreenhouse.data.model.Plot
 import com.teti2026.smartgreenhouse.data.model.Review
+import com.teti2026.smartgreenhouse.data.model.SensorReading
 import com.teti2026.smartgreenhouse.data.model.User
 import com.teti2026.smartgreenhouse.data.model.UserRole
 import kotlinx.coroutines.channels.awaitClose
@@ -37,6 +38,7 @@ class FirestoreRepository(
     private val chatMessagesCollection = firestore.collection("chat_messages")
     private val ordersCollection = firestore.collection("orders")
     private val reviewsCollection = firestore.collection("reviews")
+    private val sensorReadingsCollection = firestore.collection("sensor_readings")
 
     /** Baca dokumen profil `users/{uid}` (data-contracts.md §3.1) — dipakai layar Profil kedua sisi. */
     suspend fun getUser(uid: String): Result<User> = runCatching {
@@ -73,9 +75,16 @@ class FirestoreRepository(
 
     /**
      * Simpan hasil form Setup Greenhouse 3-langkah sebagai satu dokumen `farms` + satu dokumen
-     * `plots` (data-contracts.md §3.2/§3.3). [deviceId] berasal dari kode pairing 6-digit yang
-     * diketik petani — TIDAK diverifikasi ke ESP32 sungguhan di sini (di luar lingkup Mobile,
-     * lihat `docs/Architecture.md §3`: pairing device fisik ada di firmware/backend).
+     * `plots` (data-contracts.md §3.2/§3.3). [deviceId] adalah `device_id` firmware IoT (string
+     * bebas, mis. "gh-esp32-01", TIDAK diverifikasi ke ESP32 sungguhan di sini — lihat
+     * `docs/Architecture.md §3`: pairing device fisik ada di firmware/backend).
+     *
+     * [plotId] dipakai LANGSUNG sebagai Firestore document ID plot (`plotsCollection.document(plotId)`,
+     * BUKAN `.document()` auto-generate) — firmware IoT mengirim `plot_id` TETAP (hardcoded di
+     * `config.h` saat flash), jadi plot harus dibuat dengan ID yang SAMA persis supaya
+     * `sensor_readings` yang ditulis backend (dari MQTT) langsung terhubung tanpa langkah manual
+     * di Firestore Console. Auto-generate ID sebelumnya membuat plot baru MUSTAHIL cocok dengan
+     * `plot_id` firmware manapun — ditemukan saat testing manual end-to-end.
      */
     suspend fun createFarmWithPlot(
         ownerUid: String,
@@ -84,7 +93,8 @@ class FirestoreRepository(
         locationLat: Double,
         locationLng: Double,
         cropType: String,
-        deviceId: String
+        deviceId: String,
+        plotId: String
     ): Result<Pair<Farm, Plot>> = runCatching {
         val farmRef = farmsCollection.document()
         val farm = Farm(
@@ -106,7 +116,7 @@ class FirestoreRepository(
             )
         ).await()
 
-        val plotRef = plotsCollection.document()
+        val plotRef = plotsCollection.document(plotId)
         val plot = Plot(
             id = plotRef.id,
             farmId = farm.id,
@@ -324,6 +334,30 @@ class FirestoreRepository(
     }
 
     /**
+     * Listener realtime `sensor_readings` milik [plotId], [limit] dokumen terbaru diurutkan
+     * `timestamp` descending (index bawaan cukup: satu `whereEqualTo` + satu `orderBy` field yang
+     * sama-sama dipakai filter equality tunggal — TIDAK butuh composite index manual, beda dari
+     * kasus `getMessagesFlow` yang memang butuh `Filter.or`). Dashboard menampilkan data IoT
+     * TERBARU secara otomatis begitu backend menulis dokumen baru (dari MQTT `sensor_service.
+     * save_sensor_reading`) — TANPA polling REST, sesuai `docs/Architecture.md §3` (backend
+     * bukan sumber baca data terstruktur, mobile baca Firestore langsung).
+     */
+    fun observeSensorReadings(plotId: String, limit: Long = 20): Flow<List<SensorReading>> = callbackFlow {
+        val registration = sensorReadingsCollection
+            .whereEqualTo("plot_id", plotId)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(limit)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents.orEmpty().map { mapSensorReadingDocument(it) })
+            }
+        awaitClose { registration.remove() }
+    }
+
+    /**
      * Simpan pesanan baru (data-contracts.md §3.8). [status] awal SELALU "pending" — diubah
      * petani lewat [updateOrderStatus] di screen "Pesanan Masuk". [sellerUid] (pemilik farm dari
      * `listingId`, di-resolve `CheckoutViewModel` sebelum memanggil ini) disimpan sebagai field
@@ -433,6 +467,16 @@ class FirestoreRepository(
         totalPrice = doc.getLong("total_price") ?: 0L,
         status = doc.getString("status").orEmpty(),
         createdAt = doc.getString("created_at").orEmpty()
+    )
+
+    private fun mapSensorReadingDocument(doc: DocumentSnapshot): SensorReading = SensorReading(
+        id = doc.id,
+        plotId = doc.getString("plot_id").orEmpty(),
+        timestampMillis = doc.getTimestamp("timestamp")?.toDate()?.time ?: 0L,
+        temperature = doc.getDouble("temperature"),
+        humidity = doc.getDouble("humidity"),
+        soilMoisture = doc.getDouble("soil_moisture"),
+        lightIntensity = doc.getDouble("light_intensity")
     )
 
     private fun mapChatMessageDocument(doc: DocumentSnapshot): ChatMessage = ChatMessage(

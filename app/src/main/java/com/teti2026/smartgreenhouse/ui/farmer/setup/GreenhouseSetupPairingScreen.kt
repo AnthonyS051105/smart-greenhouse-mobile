@@ -2,20 +2,15 @@ package com.teti2026.smartgreenhouse.ui.farmer.setup
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.SensorsOff
@@ -31,39 +26,41 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.teti2026.smartgreenhouse.R
+import com.teti2026.smartgreenhouse.ui.components.GreenhouseTextField
 import com.teti2026.smartgreenhouse.ui.theme.SmartgreenhousemobileTheme
 
-private const val PAIRING_CODE_LENGTH = 6
-
 /**
- * Langkah 3/3 — Screen "Setup Greenhouse - Pairing Perangkat" dari Stitch. 6 digit kode
- * pairing digabung menjadi [pairingCode] (nantinya dipetakan ke `plots.device_id`, lihat
- * `shared/data-contracts.md §3.3`). Stateless: [pairingCode] di-hoist ke caller.
+ * Langkah 3/3 — Screen "Setup Greenhouse - Pairing Perangkat". [pairingCode] dipetakan langsung
+ * ke `plots.device_id` (`docs/data-contracts.md §1.1/§3.3`). `device_id` di kontrak resmi adalah
+ * STRING BEBAS FORMAT (contoh persis di kontrak: `"gh-esp32-01"`, 11 karakter dengan strip) —
+ * BUKAN 6-digit kode pairing numerik. Field ini SEBELUMNYA berupa 6 kotak OTP-style 1-karakter
+ * (asumsi "kode pairing 6 digit" yang TIDAK PERNAH ada di `data-contracts.md`), yang membuat
+ * device_id asli firmware (`config.example.h` → `DEVICE_ID "gh-esp32-01"`) mustahil diketik utuh
+ * — ditemukan saat testing manual dengan device_id sungguhan dari Serial Monitor. Diganti text
+ * field bebas biasa ([GreenhouseTextField], pola sama seperti field email/password Login) supaya
+ * device_id APAPUN sesuai kontrak bisa dimasukkan apa adanya. Stateless: [pairingCode] di-hoist
+ * ke caller.
+ *
+ * [plotId] adalah field TAMBAHAN (bukan bagian layar asli) — dipakai LANGSUNG sebagai Firestore
+ * document ID `plots/{plotId}` (lihat `FirestoreRepository.createFarmWithPlot`), BUKAN
+ * auto-generate. Firmware IoT mengirim `plot_id` TETAP (hardcoded di `config.h`), jadi user harus
+ * memasukkan nilai yang SAMA persis di sini (juga dari Serial Monitor) supaya Dashboard langsung
+ * menerima `sensor_readings` tanpa perlu menyamakan ID manual lewat Firestore Console setelahnya.
  */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun GreenhouseSetupPairingScreen(
     pairingCode: String,
     onPairingCodeChange: (String) -> Unit,
+    plotId: String,
+    onPlotIdChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onFinishClick: () -> Unit,
     onHelpClick: () -> Unit,
@@ -152,12 +149,22 @@ fun GreenhouseSetupPairingScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
             )
 
-            PairingCodeInput(
-                pairingCode = pairingCode,
-                onPairingCodeChange = onPairingCodeChange,
+            GreenhouseTextField(
+                value = pairingCode,
+                onValueChange = onPairingCodeChange,
+                label = stringResource(R.string.setup_greenhouse_pairing_device_id_label),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 24.dp, bottom = 32.dp)
+                    .padding(top = 24.dp, bottom = 16.dp)
+            )
+
+            GreenhouseTextField(
+                value = plotId,
+                onValueChange = onPlotIdChange,
+                label = stringResource(R.string.setup_greenhouse_pairing_plot_id_label),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
             )
 
             if (errorMessage != null) {
@@ -176,7 +183,7 @@ fun GreenhouseSetupPairingScreen(
             ) {
                 Button(
                     onClick = onFinishClick,
-                    enabled = pairingCode.length == PAIRING_CODE_LENGTH && !isLoading,
+                    enabled = pairingCode.isNotBlank() && plotId.isNotBlank() && !isLoading,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(percent = 50),
                     colors = ButtonDefaults.buttonColors(
@@ -214,108 +221,15 @@ fun GreenhouseSetupPairingScreen(
     }
 }
 
-/**
- * 6 kotak digit tunggal bergaya OTP. State digabung jadi satu [String] agar mudah di-hoist,
- * bukan 6 state terpisah. Fokus otomatis maju ke kotak berikutnya saat digit terisi, dan
- * mundur ke kotak sebelumnya saat Backspace ditekan pada kotak yang sudah kosong — meniru
- * skrip auto-advance pada desain asli Stitch (HTML/JS), diterjemahkan ke `FocusRequester`.
- */
-@Composable
-private fun PairingCodeInput(
-    pairingCode: String,
-    onPairingCodeChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val focusRequesters = remember { List(PAIRING_CODE_LENGTH) { FocusRequester() } }
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        modifier = modifier
-    ) {
-        val paddedCode = pairingCode.padEnd(PAIRING_CODE_LENGTH, ' ')
-        repeat(PAIRING_CODE_LENGTH) { index ->
-            val digit = paddedCode[index].takeIf { it != ' ' }?.toString().orEmpty()
-            PairingDigitBox(
-                digit = digit,
-                focusRequester = focusRequesters[index],
-                onDigitChange = { newDigit ->
-                    val updatedChars = paddedCode.toCharArray()
-                    updatedChars[index] = newDigit.firstOrNull() ?: ' '
-                    val updated = String(updatedChars).trimEnd()
-                    onPairingCodeChange(updated.take(PAIRING_CODE_LENGTH))
-                    if (newDigit.isNotEmpty() && index < PAIRING_CODE_LENGTH - 1) {
-                        focusRequesters[index + 1].requestFocus()
-                    }
-                },
-                onBackspaceOnEmpty = {
-                    if (index > 0) {
-                        focusRequesters[index - 1].requestFocus()
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun PairingDigitBox(
-    digit: String,
-    focusRequester: FocusRequester,
-    onDigitChange: (String) -> Unit,
-    onBackspaceOnEmpty: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .width(44.dp)
-            .height(56.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(12.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        BasicTextField(
-            value = digit,
-            onValueChange = { value ->
-                val singleDigit = value.filter { it.isLetterOrDigit() }.takeLast(1)
-                onDigitChange(singleDigit)
-            },
-            singleLine = true,
-            textStyle = TextStyle(
-                textAlign = TextAlign.Center,
-                fontSize = 24.sp,
-                color = MaterialTheme.colorScheme.primary
-            ),
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(4.dp)
-                .focusRequester(focusRequester)
-                .onPreviewKeyEvent { event ->
-                    if (event.type == androidx.compose.ui.input.key.KeyEventType.KeyUp &&
-                        event.key == Key.Backspace &&
-                        digit.isEmpty()
-                    ) {
-                        onBackspaceOnEmpty()
-                        true
-                    } else {
-                        false
-                    }
-                }
-        )
-    }
-}
-
 @Preview(showBackground = true, heightDp = 900)
 @Composable
 private fun GreenhouseSetupPairingScreenPreview() {
     SmartgreenhousemobileTheme {
         GreenhouseSetupPairingScreen(
-            pairingCode = "A1B2",
+            pairingCode = "gh-esp32-01",
             onPairingCodeChange = {},
+            plotId = "plot-abc123",
+            onPlotIdChange = {},
             onBackClick = {},
             onFinishClick = {},
             onHelpClick = {}

@@ -70,6 +70,10 @@ class GreenhouseSetupStateHolder @JvmOverloads constructor(
         state = state.copy(pairingCode = value)
     }
 
+    fun updatePlotId(value: String) {
+        state = state.copy(plotId = value)
+    }
+
     /**
      * Simpan [state] terkumpul dari ketiga langkah sebagai dokumen `farms` + `plots` sungguhan.
      * [onFinishClick] caller (NavGraph, lewat [GreenhouseSetupPairingRoute]) hanya dipanggil
@@ -83,7 +87,7 @@ class GreenhouseSetupStateHolder @JvmOverloads constructor(
         }
         val sizeM2 = state.sizeM2.toDoubleOrNull()
         val location = state.location
-        if (sizeM2 == null || location == null) {
+        if (sizeM2 == null || location == null || state.plotId.isBlank()) {
             _submitState.value = SetupSubmitState.Error(R.string.setup_greenhouse_error_incomplete)
             return
         }
@@ -96,7 +100,8 @@ class GreenhouseSetupStateHolder @JvmOverloads constructor(
                 locationLat = location.latitude,
                 locationLng = location.longitude,
                 cropType = state.cropType.value,
-                deviceId = state.pairingCode
+                deviceId = state.pairingCode,
+                plotId = state.plotId
             )
                 .onSuccess { _submitState.value = SetupSubmitState.Success }
                 .onFailure { _submitState.value = SetupSubmitState.Error(R.string.setup_greenhouse_error_save_failed) }

@@ -18,6 +18,7 @@
     <string name="auth_register_button">Daftar</string>
     <string name="auth_login_prompt">Sudah punya akun?</string>
     <string name="auth_login_cta">Masuk di sini</string>
+    <string name="auth_back_to_login_content_description">Kembali ke halaman Masuk</string>
     <string name="auth_error_invalid_email">Format email tidak valid.</string>
     <string name="auth_error_wrong_password">Email atau kata sandi salah.</string>
     <string name="auth_error_user_not_found">Akun tidak ditemukan. Periksa email atau daftar akun baru.</string>
@@ -178,6 +179,7 @@
     <string name="dashboard_actuator_ventilation">Ventilasi (Auto)</string>
     <string name="dashboard_actuator_last_active">Terakhir aktif: %1$s</string>
     <string name="dashboard_actuator_off">Mati</string>
+    <string name="dashboard_error_load_failed">Gagal memuat data sensor. Periksa koneksi internet.</string>
 
     <!-- Kontrol Irigasi / Kontrol Ventilasi - Petani (ModalBottomSheet dari section Aktuator) -->
     <string name="actuator_control_mode_automatic">Otomatis</string>
@@ -186,6 +188,8 @@
     <string name="actuator_control_turn_off">MATIKAN</string>
     <string name="actuator_control_status_current">Status Saat Ini</string>
     <string name="actuator_control_manual_warning">Mode otomatis AI akan dinonaktifkan sementara.</string>
+    <string name="actuator_control_trigger_error">Gagal mengirim perintah ke perangkat. Periksa koneksi internet.</string>
+    <string name="actuator_control_recommendation_error">Gagal memuat rekomendasi AI.</string>
     <string name="actuator_control_manual_badge">Mode AI Nonaktif</string>
     <string name="actuator_control_manual_dialog_title">Mode AI Nonaktif</string>
     <string name="actuator_control_manual_dialog_message">Kamu sedang dalam mode Manual, jadi sistem AI otomatis tidak mengontrol aktuator ini untuk sementara. Kembali ke mode Otomatis agar AI mengambil alih lagi.</string>
@@ -274,7 +278,9 @@
 
     <string name="setup_greenhouse_pairing_title">Pairing Perangkat</string>
     <string name="setup_greenhouse_pairing_step_label">Langkah 3 dari 3</string>
-    <string name="setup_greenhouse_pairing_instruction">Masukkan 6 digit kode pairing yang tertera pada perangkat IoT Anda.</string>
+    <string name="setup_greenhouse_pairing_instruction">Masukkan ID perangkat (device_id) dan ID plot (plot_id) yang tertera pada Serial Monitor firmware IoT Anda, mis. \"gh-esp32-01\" dan \"plot-abc123\".</string>
+    <string name="setup_greenhouse_pairing_device_id_label">ID Perangkat (device_id)</string>
+    <string name="setup_greenhouse_pairing_plot_id_label">ID Plot (plot_id)</string>
     <string name="setup_greenhouse_pairing_finish_button">Selesaikan Setup</string>
     <string name="setup_greenhouse_pairing_help_button">Butuh Bantuan?</string>
     <string name="setup_greenhouse_error_incomplete">Data lahan belum lengkap. Periksa kembali ukuran dan lokasi.</string>
@@ -381,6 +387,7 @@
     <string name="scan_viewfinder_gallery_content_description">Pilih dari galeri</string>
     <string name="scan_viewfinder_switch_camera_content_description">Ganti kamera</string>
     <string name="scan_camera_permission_required">Izin kamera diperlukan untuk memindai tanaman. Aktifkan lewat pengaturan aplikasi.</string>
+    <string name="scan_analysis_error">Gagal menganalisis citra. Periksa koneksi internet, lalu coba lagi.</string>
 
     <!-- Pindai Tanaman - Menganalisis -->
     <string name="scan_analyzing_title">Menganalisis citra…</string>

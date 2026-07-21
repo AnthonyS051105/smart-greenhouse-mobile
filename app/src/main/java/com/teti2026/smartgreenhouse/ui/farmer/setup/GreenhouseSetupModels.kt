@@ -21,5 +21,14 @@ data class GreenhouseSetupFormState(
     val cropType: CropTypeOption = CropTypeOption.CABAI_RAWIT,
     val location: Position? = null,
     val locationLabel: String = "",
-    val pairingCode: String = ""
+    val pairingCode: String = "",
+    /**
+     * ID plot Firestore (`plots/{plotId}`) — sengaja diketik user, BUKAN auto-generate
+     * `.document()`. Firmware IoT mengirim `plot_id` TETAP (hardcoded di `config.h` saat flash,
+     * lihat `iot/include/config.example.h`), jadi user harus memasukkan nilai yang SAMA persis
+     * di sini supaya `sensor_readings` yang ditulis backend (dari MQTT) langsung terhubung ke
+     * plot ini tanpa langkah manual di Firestore Console — ditemukan sebagai gap saat testing
+     * manual (plot auto-generate tidak pernah cocok dengan plot_id firmware).
+     */
+    val plotId: String = ""
 )

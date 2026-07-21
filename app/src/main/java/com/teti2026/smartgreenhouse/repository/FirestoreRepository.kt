@@ -335,18 +335,19 @@ class FirestoreRepository(
 
     /**
      * Listener realtime `sensor_readings` milik [plotId], [limit] dokumen terbaru diurutkan
-     * `timestamp` descending (index bawaan cukup: satu `whereEqualTo` + satu `orderBy` field yang
-     * sama-sama dipakai filter equality tunggal — TIDAK butuh composite index manual, beda dari
-     * kasus `getMessagesFlow` yang memang butuh `Filter.or`). Dashboard menampilkan data IoT
-     * TERBARU secara otomatis begitu backend menulis dokumen baru (dari MQTT `sensor_service.
-     * save_sensor_reading`) — TANPA polling REST, sesuai `docs/Architecture.md §3` (backend
-     * bukan sumber baca data terstruktur, mobile baca Firestore langsung).
+     * `timestamp` descending. Query Firestore HANYA `whereEqualTo` (equality tunggal, TANPA
+     * `orderBy` di server) — sebelumnya ada `.orderBy("timestamp")` dikombinasikan dengan
+     * `whereEqualTo("plot_id", ...)` di field BERBEDA, yang di Firestore SELALU butuh composite
+     * index manual (`FAILED_PRECONDITION`); index itu tidak pernah dibuat, jadi listener gagal
+     * silent lewat `close(error)` di bawah dan Dashboard macet permanen di data sampel
+     * (`DashboardFarmerRoute.sampleSensorItems`) — ditemukan saat investigasi bug "angka sensor
+     * tidak update" walau serial monitor ESP32 & Firestore backend keduanya terus menerima data
+     * baru. Diurutkan+dipotong CLIENT-SIDE sebagai gantinya (pola sama seperti [getMessagesFlow]
+     * yang menghindari composite index dengan cara serupa) supaya query tetap equality-only.
      */
     fun observeSensorReadings(plotId: String, limit: Long = 20): Flow<List<SensorReading>> = callbackFlow {
         val registration = sensorReadingsCollection
             .whereEqualTo("plot_id", plotId)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(limit)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -355,7 +356,7 @@ class FirestoreRepository(
                 trySend(snapshot?.documents.orEmpty().map { mapSensorReadingDocument(it) })
             }
         awaitClose { registration.remove() }
-    }
+    }.map { readings -> readings.sortedByDescending { it.timestampMillis }.take(limit.toInt()) }
 
     /**
      * Simpan pesanan baru (data-contracts.md §3.8). [status] awal SELALU "pending" — diubah

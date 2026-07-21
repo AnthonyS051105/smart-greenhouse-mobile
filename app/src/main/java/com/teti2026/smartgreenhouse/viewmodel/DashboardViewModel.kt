@@ -1,5 +1,6 @@
 package com.teti2026.smartgreenhouse.viewmodel
 
+import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Thermostat
@@ -17,6 +18,7 @@ import com.teti2026.smartgreenhouse.ui.farmer.DashboardSensorItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -74,14 +76,19 @@ class DashboardViewModel @JvmOverloads constructor(
                 _state.value = DashboardUiState.Error(R.string.dashboard_error_load_failed)
                 return@launch
             }
-            firestoreRepository.observeSensorReadings(plot.id).collect { readings ->
-                _state.value = DashboardUiState.Success(
-                    plot = plot,
-                    deviceId = plot.deviceId,
-                    sensorItems = buildSensorItems(readings.firstOrNull()),
-                    chartPointsBySensor = buildChartPoints(readings)
-                )
-            }
+            firestoreRepository.observeSensorReadings(plot.id)
+                .catch { error ->
+                    Log.e("DashboardViewModel", "observeSensorReadings gagal untuk plot ${plot.id}", error)
+                    _state.value = DashboardUiState.Error(R.string.dashboard_error_load_failed)
+                }
+                .collect { readings ->
+                    _state.value = DashboardUiState.Success(
+                        plot = plot,
+                        deviceId = plot.deviceId,
+                        sensorItems = buildSensorItems(readings.firstOrNull()),
+                        chartPointsBySensor = buildChartPoints(readings)
+                    )
+                }
         }
     }
 

@@ -105,17 +105,6 @@ class FirestoreRepository(
             locationLng = locationLng,
             farmSizeM2 = farmSizeM2
         )
-        farmRef.set(
-            mapOf(
-                "id" to farm.id,
-                "owner_uid" to farm.ownerUid,
-                "farm_name" to farm.farmName,
-                "location_lat" to farm.locationLat,
-                "location_lng" to farm.locationLng,
-                "farm_size_m2" to farm.farmSizeM2
-            )
-        ).await()
-
         val plotRef = plotsCollection.document(plotId)
         val plot = Plot(
             id = plotRef.id,
@@ -124,15 +113,39 @@ class FirestoreRepository(
             plantingDate = LocalDate.now().toString(),
             deviceId = deviceId
         )
-        plotRef.set(
-            mapOf(
-                "id" to plot.id,
-                "farm_id" to plot.farmId,
-                "crop_type" to plot.cropType,
-                "planting_date" to plot.plantingDate,
-                "device_id" to plot.deviceId
+
+        // Batch, BUKAN dua `.set()` terpisah — sebelumnya farm & plot ditulis lewat dua await()
+        // berurutan, jadi kalau setup gagal/di-retry di antara keduanya (network drop, user
+        // menutup app), tersisa dokumen `farms` YATIM tanpa `plots` pasangannya. `getFarmAndPlotForOwner`
+        // query `farms` TANPA `orderBy` (limit(1) saja) sehingga dokumen yatim manapun bisa
+        // "menang" dibanding farm yang benar-benar lengkap — ditemukan saat investigasi bug
+        // "dashboard sensor macet di data sampel": akun tester punya 3 dokumen `farms` dari
+        // beberapa kali percobaan Setup Greenhouse, tapi cuma 1 yang punya `plots` pasangannya,
+        // dan yang terpilih justru salah satu yang yatim. Batch commit menjamin farm+plot SELALU
+        // dibuat bersamaan atau TIDAK SAMA SEKALI, jadi kombinasi yatim ini tidak bisa terjadi lagi.
+        firestore.batch()
+            .set(
+                farmRef,
+                mapOf(
+                    "id" to farm.id,
+                    "owner_uid" to farm.ownerUid,
+                    "farm_name" to farm.farmName,
+                    "location_lat" to farm.locationLat,
+                    "location_lng" to farm.locationLng,
+                    "farm_size_m2" to farm.farmSizeM2
+                )
             )
-        ).await()
+            .set(
+                plotRef,
+                mapOf(
+                    "id" to plot.id,
+                    "farm_id" to plot.farmId,
+                    "crop_type" to plot.cropType,
+                    "planting_date" to plot.plantingDate,
+                    "device_id" to plot.deviceId
+                )
+            )
+            .commit().await()
 
         farm to plot
     }

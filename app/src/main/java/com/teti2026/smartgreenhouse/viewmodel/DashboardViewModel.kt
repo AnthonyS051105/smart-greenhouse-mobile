@@ -73,6 +73,7 @@ class DashboardViewModel @JvmOverloads constructor(
             val plotResult = firestoreRepository.getFarmAndPlotForOwner(uid)
             val plot = plotResult.getOrNull()?.second
             if (plot == null) {
+                Log.e("DashboardViewModel", "getFarmAndPlotForOwner($uid) gagal", plotResult.exceptionOrNull())
                 _state.value = DashboardUiState.Error(R.string.dashboard_error_load_failed)
                 return@launch
             }

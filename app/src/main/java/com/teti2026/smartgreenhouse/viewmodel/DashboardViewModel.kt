@@ -15,6 +15,7 @@ import com.teti2026.smartgreenhouse.repository.AuthRepository
 import com.teti2026.smartgreenhouse.repository.FirestoreRepository
 import com.teti2026.smartgreenhouse.ui.components.SensorChartPoint
 import com.teti2026.smartgreenhouse.ui.farmer.DashboardSensorItem
+import com.teti2026.smartgreenhouse.util.ripenessHealthScore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +31,8 @@ sealed interface DashboardUiState {
         val plot: Plot,
         val deviceId: String,
         val sensorItems: List<DashboardSensorItem>,
-        val chartPointsBySensor: Map<String, List<SensorChartPoint>>
+        val chartPointsBySensor: Map<String, List<SensorChartPoint>>,
+        val healthScore: Double?
     ) : DashboardUiState
     data class Error(val messageResId: Int) : DashboardUiState
 }
@@ -47,9 +49,13 @@ enum class SensorChartTab(val labelRes: Int) {
  * Ambil plot milik petani lalu pasang listener realtime `sensor_readings` (`FirestoreRepository.
  * observeSensorReadings`) — kartu sensor & grafik Dashboard ikut ter-update otomatis begitu
  * backend menulis dokumen baru (dari IoT via MQTT), TANPA restart app atau polling manual
- * (`docs/Architecture.md §3`). [healthScore]/jadwal panen TIDAK ditangani di sini — belum ada
- * sumber data backend untuk itu, tetap sampel di [com.teti2026.smartgreenhouse.ui.farmer.
- * DashboardFarmerRoute] sampai fitur terkait dikerjakan terpisah.
+ * (`docs/Architecture.md §3`). [DashboardUiState.Success.healthScore] = rata-rata
+ * `ripenessHealthScore(ripeness_class, confidence_score)` seluruh `crop_images` milik plot ini
+ * (formula sama seperti `ScanPlantRoute`/`ImageHistoryViewModel`, lihat `util/RipenessMapping.kt`)
+ * — null kalau belum ada satu pun `crop_images` tersimpan (petani belum pernah pindai tanaman).
+ * Jadwal panen TIDAK ditangani di sini — belum ada sumber data backend untuk itu, tetap sampel di
+ * [com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute] sampai fitur terkait dikerjakan
+ * terpisah.
  */
 class DashboardViewModel @JvmOverloads constructor(
     private val authRepository: AuthRepository = AuthRepository(),
@@ -63,7 +69,7 @@ class DashboardViewModel @JvmOverloads constructor(
         load()
     }
 
-    private fun load() {
+    fun load() {
         val uid = authRepository.currentUser()?.uid
         if (uid == null) {
             _state.value = DashboardUiState.Error(R.string.auth_error_generic)
@@ -77,6 +83,15 @@ class DashboardViewModel @JvmOverloads constructor(
                 _state.value = DashboardUiState.Error(R.string.dashboard_error_load_failed)
                 return@launch
             }
+            val healthScore = firestoreRepository.getCropImages(plot.id)
+                .onFailure { error ->
+                    Log.e("DashboardViewModel", "getCropImages(${plot.id}) gagal, healthScore null", error)
+                }
+                .getOrNull()
+                ?.takeIf { it.isNotEmpty() }
+                ?.map { ripenessHealthScore(it.ripenessClass, it.confidenceScore) }
+                ?.average()
+
             firestoreRepository.observeSensorReadings(plot.id)
                 .catch { error ->
                     Log.e("DashboardViewModel", "observeSensorReadings gagal untuk plot ${plot.id}", error)
@@ -87,7 +102,8 @@ class DashboardViewModel @JvmOverloads constructor(
                         plot = plot,
                         deviceId = plot.deviceId,
                         sensorItems = buildSensorItems(readings.firstOrNull()),
-                        chartPointsBySensor = buildChartPoints(readings)
+                        chartPointsBySensor = buildChartPoints(readings),
+                        healthScore = healthScore
                     )
                 }
         }

@@ -519,7 +519,7 @@ private fun LabeledOutlinedField(
             prefix = prefix?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,

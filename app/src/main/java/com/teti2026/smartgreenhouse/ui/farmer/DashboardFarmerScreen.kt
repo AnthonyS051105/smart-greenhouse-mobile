@@ -56,7 +56,7 @@ fun DashboardFarmerScreen(
     farmerName: String,
     dateLabel: String,
     healthScore: Double,
-    healthScoreTrendLabel: String,
+    healthScoreTrendLabel: String? = null,
     sensorItems: List<DashboardSensorItem>,
     chartTabs: List<String>,
     selectedChartTab: String,

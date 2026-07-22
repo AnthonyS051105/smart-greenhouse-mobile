@@ -2,10 +2,15 @@ package com.teti2026.smartgreenhouse.ui.farmer.history
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teti2026.smartgreenhouse.ui.components.ProfileErrorView
@@ -33,6 +38,12 @@ import com.teti2026.smartgreenhouse.viewmodel.ImageHistoryViewModel
  * TODO: filter "Minggu Ini" idealnya menyaring berdasarkan timestamp asli 7 hari terakhir —
  * [CropImageHistoryItem] cuma punya [CropImageHistoryItem.timestampLabel] (String tampilan, sudah
  * diformat), bukan epoch — untuk sekarang tetap tampilkan semua (sama seperti perilaku sebelumnya).
+ *
+ * [ImageHistoryViewModel] hanya `load()` sekali di `init` — `onSaveToHistoryClick` di
+ * `ScanPlantRoute` cuma `popBackStack()` (bukan destination baru), jadi instance ViewModel yang
+ * SAMA dipakai lagi dengan `state` lama (list masih kosong walau `crop_images` baru saja berhasil
+ * ditulis). `ON_RESUME` listener di bawah memanggil `viewModel.load()` ulang setiap kali layar ini
+ * kembali terlihat, supaya foto yang baru disimpan langsung muncul tanpa perlu keluar-masuk app.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +56,18 @@ fun ImageHistoryRoute(
 ) {
     var selectedFilter by remember { mutableStateOf(ImageHistoryFilter.ALL) }
     var selectedImageId by remember { mutableStateOf<String?>(null) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentViewModel by rememberUpdatedState(viewModel)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                currentViewModel.load()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 

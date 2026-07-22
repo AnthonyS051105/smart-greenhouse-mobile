@@ -5,14 +5,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teti2026.smartgreenhouse.R
@@ -50,17 +55,38 @@ fun DashboardFarmerRoute(
     profileViewModel: ProfileViewModel = viewModel(),
     dashboardViewModel: DashboardViewModel = viewModel()
 ) {
-    // Hanya [farmerName] (sapaan header) diambil dari [ProfileViewModel] — grafik sensor & status
-    // aktuator diambil dari [DashboardViewModel] (realtime Firestore `sensor_readings`).
-    // health_score & jadwal panen TETAP sampel statis (belum ada sumber data backend untuk itu).
+    // Hanya [farmerName] (sapaan header) diambil dari [ProfileViewModel] — grafik sensor, status
+    // aktuator, & skor kesehatan lahan diambil dari [DashboardViewModel] (realtime Firestore
+    // `sensor_readings` + rata-rata `crop_images`). Jadwal panen TETAP sampel statis (belum ada
+    // sumber data backend untuk itu).
     val profileState by profileViewModel.state.collectAsStateWithLifecycle()
     val farmerName = (profileState as? ProfileUiState.Success)?.user?.name.orEmpty()
+
+    // DashboardViewModel.load() cuma jalan sekali di init — begitu petani kembali dari Pindai
+    // Tanaman (crop_images baru tersimpan) atau Riwayat Citra, skor kesehatan lahan harus
+    // dihitung ulang. Pola sama seperti ImageHistoryRoute (lihat KDoc-nya): ON_RESUME memicu
+    // reload supaya rata-rata health_score selalu mencerminkan crop_images terbaru.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentDashboardViewModel by rememberUpdatedState(dashboardViewModel)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                currentDashboardViewModel.load()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val dashboardState by dashboardViewModel.state.collectAsStateWithLifecycle()
     val dashboardSuccess = dashboardState as? DashboardUiState.Success
     val plotId = dashboardSuccess?.plot?.id
     val deviceId = dashboardSuccess?.deviceId
     val sensorItems = dashboardSuccess?.sensorItems ?: sampleSensorItems
+    // Null (belum ada crop_images tersimpan untuk plot ini) tetap ditampilkan sebagai 0 di kartu
+    // Skor Kesehatan Lahan — bukan sampel 85.0 lagi, supaya tidak menyesatkan petani baru yang
+    // belum pernah pindai tanaman sama sekali.
+    val healthScore = dashboardSuccess?.healthScore ?: 0.0
 
     var selectedChartTab by remember { mutableStateOf(CHART_TABS.first()) }
     val chartPoints = dashboardSuccess?.chartPointsBySensor
@@ -105,8 +131,8 @@ fun DashboardFarmerRoute(
         DashboardFarmerScreen(
             farmerName = farmerName,
             dateLabel = "Jumat, 19 Mei 2023",
-            healthScore = 85.0,
-            healthScoreTrendLabel = "+5%",
+            healthScore = healthScore,
+            healthScoreTrendLabel = null,
             sensorItems = sensorItems,
             chartTabs = CHART_TABS,
             selectedChartTab = selectedChartTab,

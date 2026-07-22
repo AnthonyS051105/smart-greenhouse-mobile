@@ -25,13 +25,15 @@ import com.teti2026.smartgreenhouse.R
 
 /**
  * Kartu hero "Skor Kesehatan Lahan" — padanan donut chart CSS pada desain Stitch.
- * [healthScore] 0-100 dari backend (`docs/data-contracts.md §5`); app TIDAK menghitung sendiri,
- * hanya menampilkan. [trendLabel] contoh "+5%" — tanda naik/turun dibawa oleh pemanggil.
+ * [healthScore] 0-100, rata-rata `ripenessHealthScore()` seluruh `crop_images` milik plot petani
+ * (dihitung di [com.teti2026.smartgreenhouse.viewmodel.DashboardViewModel], bukan hardcoded lagi).
+ * [trendLabel] contoh "+5%" — null kalau belum ada mekanisme pembanding periode sebelumnya
+ * (belum ada snapshot historis skor bulanan tersimpan), badge trend disembunyikan kalau null.
  */
 @Composable
 fun DashboardHealthScoreCard(
     healthScore: Double,
-    trendLabel: String,
+    trendLabel: String?,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -68,27 +70,29 @@ fun DashboardHealthScoreCard(
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                Surface(
-                    modifier = Modifier.padding(top = 8.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.16f)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                if (trendLabel != null) {
+                    Surface(
+                        modifier = Modifier.padding(top = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.16f)
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.TrendingUp,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.dashboard_health_score_trend, trendLabel),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(start = 4.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.dashboard_health_score_trend, trendLabel),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
                     }
                 }
             }

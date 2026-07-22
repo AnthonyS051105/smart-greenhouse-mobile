@@ -28,11 +28,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.runtime.rememberCoroutineScope
 import com.teti2026.smartgreenhouse.R
+import com.teti2026.smartgreenhouse.repository.AuthRepository
 import com.teti2026.smartgreenhouse.repository.BackendRepository
+import com.teti2026.smartgreenhouse.repository.CloudinaryRepository
+import com.teti2026.smartgreenhouse.repository.FirestoreRepository
 import com.teti2026.smartgreenhouse.ui.farmer.control.MessageTopToast
 import com.teti2026.smartgreenhouse.ui.farmer.history.ImageHealthCategory
+import com.teti2026.smartgreenhouse.util.ripenessCategory
+import com.teti2026.smartgreenhouse.util.ripenessHealthScore
+import com.teti2026.smartgreenhouse.util.ripenessLabelId
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Route "Pindai Tanaman": state machine linear Viewfinder -> Menganalisis -> Hasil Analisis untuk
@@ -45,20 +53,29 @@ import kotlinx.coroutines.delay
  * (`ripeness_class`: Overipe/Ripe/Unripe), BUKAN model penyakit tanaman (`disease_class` belum ada
  * modelnya di backend/AI manapun). [category]/[healthLabel] pada [ScanAnalysisResult] karena itu
  * diturunkan dari `ripeness_class` sebagai proksi (Ripe→GOOD, Unripe→MEDIUM, Overipe→SICK), BUKAN
- * hasil deteksi penyakit sungguhan. [healthScore] dihitung dengan formula yang sama seperti
- * `POST /listings/auto-fill-health-score` di backend (`Ripe`=100/`Unripe`=70/`Overipe`=40 × confidence)
- * karena jalur `file` langsung ini tidak mem-persist ke `crop_images` sehingga tidak bisa memanggil
- * endpoint tersebut secara terpisah.
+ * hasil deteksi penyakit sungguhan (lihat `util/RipenessMapping.kt`, dipakai bersama
+ * [com.teti2026.smartgreenhouse.viewmodel.ImageHistoryViewModel] supaya kedua jalur konsisten).
+ *
+ * Tombol "Simpan ke Riwayat Citra" di [ScanPlantResultScreen] di-tangani LANGSUNG di sini (upload
+ * [ScanAnalysisResult.imageUri] ke Cloudinary lalu tulis dokumen `crop_images` via
+ * [FirestoreRepository.createCropImage], pola sama seperti upload foto di `CreateListingRoute`) —
+ * BUKAN cuma `navController.popBackStack()` seperti sebelumnya (root cause bug "gambar tidak
+ * tersimpan & tidak muncul di Riwayat Citra"). [onSaveToHistoryClick] (tanpa parameter, dipanggil
+ * SETELAH simpan sukses) hanya untuk navigasi kembali ke Riwayat Citra, bukan lagi tempat simpan.
  */
 @Composable
 fun ScanPlantRoute(
     onCloseClick: () -> Unit,
-    onSaveToHistoryClick: (ScanAnalysisResult) -> Unit,
+    onSaveToHistoryClick: () -> Unit,
     onCreateListingClick: (ScanAnalysisResult) -> Unit,
-    backendRepository: BackendRepository = BackendRepository()
+    backendRepository: BackendRepository = BackendRepository(),
+    cloudinaryRepository: CloudinaryRepository = remember { CloudinaryRepository() },
+    firestoreRepository: FirestoreRepository = remember { FirestoreRepository() },
+    authRepository: AuthRepository = remember { AuthRepository() }
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val coroutineScope = rememberCoroutineScope()
 
     var stage by remember { mutableStateOf(ScanPlantStage.VIEWFINDER) }
     var hasCameraPermission by remember {
@@ -71,6 +88,7 @@ fun ScanPlantRoute(
     var scannedImageUri by remember { mutableStateOf<Uri?>(null) }
     var analysisResult by remember { mutableStateOf<ScanAnalysisResult?>(null) }
     var analysisErrorMessage by remember { mutableStateOf<String?>(null) }
+    var isSavingToHistory by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -172,7 +190,38 @@ fun ScanPlantRoute(
                     ScanPlantResultScreen(
                         result = result,
                         onBackClick = onCloseClick,
-                        onSaveToHistoryClick = { onSaveToHistoryClick(result) },
+                        isSaving = isSavingToHistory,
+                        onSaveToHistoryClick = {
+                            val uid = authRepository.currentUser()?.uid
+                            if (isSavingToHistory) {
+                                // no-op: upload/simpan sebelumnya masih berjalan, cegah tap ganda.
+                            } else if (uid == null) {
+                                analysisErrorMessage = context.getString(R.string.auth_error_generic)
+                            } else {
+                                isSavingToHistory = true
+                                coroutineScope.launch {
+                                    cloudinaryRepository.uploadImage(context, result.imageUri)
+                                        .mapCatching { imageUrl ->
+                                            val plot = firestoreRepository.getFarmAndPlotForOwner(uid).getOrThrow().second
+                                            firestoreRepository.createCropImage(
+                                                plotId = plot.id,
+                                                imageUrl = imageUrl,
+                                                ripenessClass = result.ripenessClass,
+                                                diseaseClass = null,
+                                                confidenceScore = result.confidenceScore
+                                            ).getOrThrow()
+                                        }
+                                        .onSuccess {
+                                            isSavingToHistory = false
+                                            onSaveToHistoryClick()
+                                        }
+                                        .onFailure {
+                                            isSavingToHistory = false
+                                            analysisErrorMessage = context.getString(R.string.scan_save_history_error)
+                                        }
+                                }
+                            }
+                        },
                         onCreateListingClick = { onCreateListingClick(result) },
                         onScanAgainClick = {
                             scannedImageUri = null
@@ -208,43 +257,25 @@ private fun CameraPermissionRequiredContent() {
     }
 }
 
-/** `Ripe`=100/`Unripe`=70/`Overipe`=40 — sama seperti `RIPENESS_HEALTH_SCORE` backend
- * (`app/routers/ai.py`, dipakai `POST /listings/auto-fill-health-score`). Base 50 untuk nilai
- * `ripeness_class` di luar 3 ini (mengikuti fallback backend). */
-private val RIPENESS_BASE_SCORE = mapOf(
-    "Ripe" to 100,
-    "Unripe" to 70,
-    "Overipe" to 40
-)
-
-private val RIPENESS_LABEL_ID = mapOf(
-    "Ripe" to "Matang",
-    "Unripe" to "Belum Matang",
-    "Overipe" to "Terlalu Matang"
-)
-
 /**
  * Petakan hasil `POST /vision/analyze` (`ripeness_class`/`confidence_score`) ke [ScanAnalysisResult].
  * TIDAK ada model penyakit tanaman yang berjalan (`disease_class` belum diimplementasikan di
- * manapun) — [category]/[healthLabel] diturunkan dari [ripenessClass] sebagai proksi kesehatan
- * visual, bukan diagnosis penyakit sungguhan.
+ * manapun) — [ScanAnalysisResult.category]/[ScanAnalysisResult.healthLabel] diturunkan dari
+ * [ripenessClass] sebagai proksi kesehatan visual, bukan diagnosis penyakit sungguhan. Formula
+ * kategori/skor diekstrak ke `util/RipenessMapping.kt` (dipakai bersama [ImageHistoryViewModel]).
  */
 private fun toScanAnalysisResult(
     imageUri: Uri,
     ripenessClass: String,
     confidenceScore: Double
 ): ScanAnalysisResult {
-    val baseScore = RIPENESS_BASE_SCORE[ripenessClass] ?: 50
-    val category = when (ripenessClass) {
-        "Ripe" -> ImageHealthCategory.GOOD
-        "Unripe" -> ImageHealthCategory.MEDIUM
-        else -> ImageHealthCategory.SICK
-    }
+    val category = ripenessCategory(ripenessClass)
     return ScanAnalysisResult(
         imageUri = imageUri,
         category = category,
-        healthScore = (baseScore * confidenceScore).let { Math.round(it).toDouble() },
-        ripenessLabel = RIPENESS_LABEL_ID[ripenessClass] ?: ripenessClass,
+        healthScore = ripenessHealthScore(ripenessClass, confidenceScore),
+        ripenessClass = ripenessClass,
+        ripenessLabel = ripenessLabelId(ripenessClass),
         healthLabel = when (category) {
             ImageHealthCategory.GOOD -> "Sehat"
             ImageHealthCategory.MEDIUM -> "Perlu Perhatian"

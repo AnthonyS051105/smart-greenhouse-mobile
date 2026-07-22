@@ -23,6 +23,10 @@ data class ScanAnalysisResult(
     val imageUri: Uri,
     val category: ImageHealthCategory,
     val healthScore: Double,
+    /** Nilai mentah `ripeness_class` ("Ripe"/"Unripe"/"Overipe") — dipakai saat "Simpan ke
+     * Riwayat Citra" menulis dokumen `crop_images` (data-contracts.md §3.6 mensyaratkan field
+     * mentah, BUKAN [ripenessLabel] yang sudah diterjemahkan ke Bahasa Indonesia untuk tampilan). */
+    val ripenessClass: String,
     val ripenessLabel: String,
     val healthLabel: String,
     val confidenceScore: Double,

@@ -35,8 +35,8 @@ import com.teti2026.smartgreenhouse.ui.farmer.NotificationFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.ProfileFarmerRoute
 import com.teti2026.smartgreenhouse.ui.farmer.chat.ChatListRoute
 import com.teti2026.smartgreenhouse.ui.farmer.chat.FarmerChatRoute
+import com.teti2026.smartgreenhouse.ui.farmer.history.ImageAnalysisDetail
 import com.teti2026.smartgreenhouse.ui.farmer.history.ImageHistoryRoute
-import com.teti2026.smartgreenhouse.ui.farmer.history.sampleImageAnalysisDetails
 import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingFormState
 import com.teti2026.smartgreenhouse.ui.farmer.listing.CreateListingRoute
 import com.teti2026.smartgreenhouse.ui.farmer.orders.FarmerOrdersRoute
@@ -75,8 +75,16 @@ fun GreenhouseNavGraph(
     // Buat Listing — tidak lewat NavArgs karena ScanAnalysisResult bukan objek statis yang bisa
     // di-resolve by-id (beda dari sampleImageAnalysisDetails). Cukup bertahan selama sesi
     // navigasi (hilang saat proses mati), konsisten dengan seluruh state lain di app ini yang
-    // belum persisten (TODO: MOB-T09/T10 untuk penyimpanan sungguhan).
+    // belum persisten.
     var lastScanResult by remember { mutableStateOf<ScanAnalysisResult?>(null) }
+
+    // Padanan [lastScanResult] di atas, untuk transfer dari "Buat Listing dari Data Ini" di Detail
+    // Analisis Citra (Riwayat Citra). [ImageAnalysisDetail] terpilih SEKARANG berasal dari
+    // Firestore sungguhan (id dokumen `crop_images` acak, `ImageHistoryViewModel`) — TIDAK bisa
+    // lagi di-resolve ulang dari `sampleImageAnalysisDetails[imageId]` statis di destination
+    // Routes.FARMER_CREATE_LISTING seperti sebelumnya (id sample & id Firestore beda ruang nilai).
+    // Objek yang sudah di-resolve [ImageHistoryRoute] diteruskan langsung ke sini, bukan hanya id-nya.
+    var lastImageAnalysisDetail by remember { mutableStateOf<ImageAnalysisDetail?>(null) }
 
     // Handler bersama tab bawah App Pembeli (Pasar <-> Peta <-> Pesanan <-> Profil): pola standar
     // Navigation Compose untuk bottom nav agar back stack tiap tab tersimpan
@@ -162,10 +170,12 @@ fun GreenhouseNavGraph(
         composable(Routes.FARMER_IMAGE_HISTORY) {
             ImageHistoryRoute(
                 onCreateListingFromImage = { selectedDetail ->
-                    // Transfer data (gambar, deskripsi, skor kesehatan) ke Buat Listing lewat
-                    // query param [prefillImageId] pada route — [CreateListingFormState]
-                    // sungguhan dibangun di composable Routes.FARMER_CREATE_LISTING di bawah
-                    // (pola sama seperti resolve listingId/farmId di destination Pembeli).
+                    // Transfer data (gambar, deskripsi, skor kesehatan) ke Buat Listing —
+                    // [selectedDetail] disimpan di [lastImageAnalysisDetail] (bukan cuma id-nya
+                    // lewat query param) karena berasal dari Firestore sungguhan sekarang, lihat
+                    // catatan di atas [lastImageAnalysisDetail]. [CreateListingFormState] sungguhan
+                    // dibangun di composable Routes.FARMER_CREATE_LISTING di bawah.
+                    lastImageAnalysisDetail = selectedDetail
                     navController.navigate(Routes.farmerCreateListingFromImage(selectedDetail.id))
                 },
                 // "Buat Listing" FAB di Riwayat Citra memicu pindaian tanaman on-demand lewat
@@ -180,12 +190,10 @@ fun GreenhouseNavGraph(
         composable(Routes.FARMER_SCAN_PLANT) {
             ScanPlantRoute(
                 onCloseClick = { navController.popBackStack() },
-                onSaveToHistoryClick = {
-                    // TODO: simpan CropImage ke Firestore via FirestoreRepository saat
-                    // MOB-T09/T10 dikerjakan (padanan hasil ESP32-CAM, tapi berasal dari kamera
-                    // HP). Untuk sekarang langsung kembali ke Riwayat Citra.
-                    navController.popBackStack()
-                },
+                // Simpan sungguhan (upload Cloudinary + tulis `crop_images`) sudah terjadi DI
+                // DALAM ScanPlantRoute sebelum callback ini dipanggil — di sini cuma navigasi
+                // kembali ke Riwayat Citra setelah sukses (lihat KDoc ScanPlantRoute).
+                onSaveToHistoryClick = { navController.popBackStack() },
                 onCreateListingClick = { result ->
                     lastScanResult = result
                     navController.navigate(Routes.FARMER_CREATE_LISTING_BASE)
@@ -300,8 +308,11 @@ fun GreenhouseNavGraph(
             // [prefillImageId] terisi hanya saat masuk dari tombol "Buat Listing dari Data Ini"
             // di Detail Analisis Citra (lihat Routes.farmerCreateListingFromImage) — `null` berarti
             // masuk dari tombol "+" navbar biasa, form pakai data sampel default seperti semula.
+            // Objek [ImageAnalysisDetail] sungguhan (Firestore) diambil dari [lastImageAnalysisDetail]
+            // (bukan resolve ulang by-id dari sample statis — lihat catatan di deklarasinya),
+            // dicocokkan ke [prefillImageId] untuk jaga-jaga bila back stack di-restore beda entry.
             val prefillImageId = backStackEntry.arguments?.getString("prefillImageId")
-            val prefillDetail = prefillImageId?.let { sampleImageAnalysisDetails[it] }
+            val prefillDetail = lastImageAnalysisDetail?.takeIf { it.id == prefillImageId }
             // [lastScanResult] terisi hanya saat masuk dari "Buat Listing dari Hasil Ini" di
             // Pindai Tanaman — Hasil Analisis (lihat destination Routes.FARMER_SCAN_PLANT di
             // atas). Diprioritaskan di atas [prefillDetail] karena keduanya tidak pernah terisi
@@ -322,6 +333,7 @@ fun GreenhouseNavGraph(
                 )
             } else {
                 prefillDetail?.let { detail ->
+                    lastImageAnalysisDetail = null
                     CreateListingFormState(
                         productName = detail.productName,
                         healthScore = detail.healthScore,

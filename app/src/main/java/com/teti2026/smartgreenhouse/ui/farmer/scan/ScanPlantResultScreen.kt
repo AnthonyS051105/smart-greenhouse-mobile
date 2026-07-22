@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -59,7 +60,8 @@ fun ScanPlantResultScreen(
     onSaveToHistoryClick: () -> Unit,
     onCreateListingClick: () -> Unit,
     onScanAgainClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSaving: Boolean = false
 ) {
     Scaffold(
         modifier = modifier,
@@ -170,6 +172,7 @@ fun ScanPlantResultScreen(
             ) {
                 Button(
                     onClick = onSaveToHistoryClick,
+                    enabled = !isSaving,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(percent = 50),
                     colors = ButtonDefaults.buttonColors(
@@ -177,7 +180,15 @@ fun ScanPlantResultScreen(
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Icon(imageVector = Icons.Filled.Save, contentDescription = null)
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(imageVector = Icons.Filled.Save, contentDescription = null)
+                    }
                     Text(
                         text = stringResource(R.string.scan_result_save_to_history_button),
                         modifier = Modifier.padding(start = 8.dp)
@@ -262,6 +273,7 @@ private fun ScanPlantResultScreenPreview() {
                 imageUri = android.net.Uri.EMPTY,
                 category = com.teti2026.smartgreenhouse.ui.farmer.history.ImageHealthCategory.GOOD,
                 healthScore = 87.0,
+                ripenessClass = "Ripe",
                 ripenessLabel = "Matang",
                 healthLabel = "Sehat",
                 confidenceScore = 0.94,

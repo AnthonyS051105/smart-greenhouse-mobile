@@ -340,6 +340,8 @@
     <string name="image_history_filter_this_week">Minggu Ini</string>
     <string name="image_history_category_sick">Sakit</string>
     <string name="image_history_fab_scan_plant">Pindai Tanaman</string>
+    <string name="image_history_empty_state">Belum ada riwayat citra. Tekan "Pindai Tanaman" untuk memindai tanaman pertama Anda.</string>
+    <string name="image_history_error_load_failed">Gagal memuat Riwayat Citra. Periksa koneksi internet.</string>
 
     <!-- Detail Analisis Citra - AgriSmart -->
     <string name="image_analysis_category_healthy">Sehat</string>
@@ -388,6 +390,7 @@
     <string name="scan_viewfinder_switch_camera_content_description">Ganti kamera</string>
     <string name="scan_camera_permission_required">Izin kamera diperlukan untuk memindai tanaman. Aktifkan lewat pengaturan aplikasi.</string>
     <string name="scan_analysis_error">Gagal menganalisis citra. Periksa koneksi internet, lalu coba lagi.</string>
+    <string name="scan_save_history_error">Gagal menyimpan ke Riwayat Citra. Periksa koneksi internet, lalu coba lagi.</string>
 
     <!-- Pindai Tanaman - Menganalisis -->
     <string name="scan_analyzing_title">Menganalisis citra…</string>

@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.Query
 import com.teti2026.smartgreenhouse.data.model.ChatMessage
+import com.teti2026.smartgreenhouse.data.model.CropImage
 import com.teti2026.smartgreenhouse.data.model.Farm
 import com.teti2026.smartgreenhouse.data.model.Listing
 import com.teti2026.smartgreenhouse.data.model.Order
@@ -39,6 +40,7 @@ class FirestoreRepository(
     private val ordersCollection = firestore.collection("orders")
     private val reviewsCollection = firestore.collection("reviews")
     private val sensorReadingsCollection = firestore.collection("sensor_readings")
+    private val cropImagesCollection = firestore.collection("crop_images")
 
     /** Baca dokumen profil `users/{uid}` (data-contracts.md §3.1) — dipakai layar Profil kedua sisi. */
     suspend fun getUser(uid: String): Result<User> = runCatching {
@@ -178,6 +180,60 @@ class FirestoreRepository(
             deviceId = plotDoc.getString("device_id").orEmpty()
         )
         farm to plot
+    }
+
+    /**
+     * Simpan hasil pindaian tanaman on-demand (kamera HP, `ScanPlantRoute`) sebagai dokumen
+     * `crop_images` baru (data-contracts.md §3.6) — padanan hasil siklus ESP32-CAM, tapi ditulis
+     * LANGSUNG dari client mobile (bukan backend Admin SDK). Firestore Security Rules `crop_images`
+     * diperlonggar khusus `create` untuk kasus ini: hanya petani pemilik [plotId] (via farm induk)
+     * yang boleh membuat dokumen, dibuktikan `get()` bersarang `plots/{plotId}` -> `farms/{farmId}`
+     * (pola sama seperti aturan create `listings`/`plots`) — lihat `docs/firestore.rules`.
+     * [diseaseClass] selalu `null` — tidak ada model deteksi penyakit yang berjalan (lihat KDoc
+     * `ScanPlantRoute`), hanya klasifikasi kematangan (`ripenessClass`).
+     */
+    suspend fun createCropImage(
+        plotId: String,
+        imageUrl: String,
+        ripenessClass: String,
+        diseaseClass: String?,
+        confidenceScore: Double
+    ): Result<CropImage> = runCatching {
+        val ref = cropImagesCollection.document()
+        val cropImage = CropImage(
+            id = ref.id,
+            plotId = plotId,
+            timestamp = Instant.now().toString(),
+            imageUrl = imageUrl,
+            ripenessClass = ripenessClass,
+            diseaseClass = diseaseClass,
+            confidenceScore = confidenceScore
+        )
+        ref.set(
+            mapOf(
+                "id" to cropImage.id,
+                "plot_id" to cropImage.plotId,
+                "timestamp" to cropImage.timestamp,
+                "image_url" to cropImage.imageUrl,
+                "ripeness_class" to cropImage.ripenessClass,
+                "disease_class" to cropImage.diseaseClass,
+                "confidence_score" to cropImage.confidenceScore
+            )
+        ).await()
+        cropImage
+    }
+
+    /**
+     * Seluruh `crop_images` milik [plotId] — dipakai "Riwayat Citra - Petani". Query HANYA
+     * `whereEqualTo` (equality tunggal, TANPA `orderBy` server-side) — pola sama seperti
+     * [observeSensorReadings], menghindari kebutuhan composite index manual. Diurutkan
+     * CLIENT-SIDE descending by [CropImage.timestamp] (string ISO 8601 UTC, urut leksikografis =
+     * urut waktu, sama seperti [getMessagesFlow]).
+     */
+    suspend fun getCropImages(plotId: String): Result<List<CropImage>> = runCatching {
+        cropImagesCollection.whereEqualTo("plot_id", plotId).get().await()
+            .documents.map { mapCropImageDocument(it) }
+            .sortedByDescending { it.timestamp }
     }
 
     /**
@@ -491,6 +547,16 @@ class FirestoreRepository(
         humidity = doc.getDouble("humidity"),
         soilMoisture = doc.getDouble("soil_moisture"),
         lightIntensity = doc.getDouble("light_intensity")
+    )
+
+    private fun mapCropImageDocument(doc: DocumentSnapshot): CropImage = CropImage(
+        id = doc.id,
+        plotId = doc.getString("plot_id").orEmpty(),
+        timestamp = doc.getString("timestamp").orEmpty(),
+        imageUrl = doc.getString("image_url").orEmpty(),
+        ripenessClass = doc.getString("ripeness_class").orEmpty(),
+        diseaseClass = doc.getString("disease_class"),
+        confidenceScore = doc.getDouble("confidence_score") ?: 0.0
     )
 
     private fun mapChatMessageDocument(doc: DocumentSnapshot): ChatMessage = ChatMessage(

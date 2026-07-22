@@ -6,11 +6,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.teti2026.smartgreenhouse.ui.components.ProfileErrorView
+import com.teti2026.smartgreenhouse.ui.components.ProfileLoadingIndicator
 import com.teti2026.smartgreenhouse.ui.navigation.Routes
+import com.teti2026.smartgreenhouse.viewmodel.ImageHistoryUiState
+import com.teti2026.smartgreenhouse.viewmodel.ImageHistoryViewModel
 
 /**
  * Route "Riwayat Citra - Petani": state filter & [selectedImageId] di-hoist di sini (pola sama
  * seperti [com.teti2026.smartgreenhouse.ui.farmer.DashboardFarmerRoute]), screen tetap stateless.
+ * Data ([CropImageHistoryItem]/[ImageAnalysisDetail]) berasal dari [ImageHistoryViewModel] —
+ * dokumen `crop_images` sungguhan milik plot petani ini (`FirestoreRepository.getCropImages`,
+ * ditulis lewat "Simpan ke Riwayat Citra" di `ScanPlantRoute`), BUKAN lagi [sampleCropImageHistoryItems]
+ * statis (sebelumnya root cause bug "gambar tersimpan tapi tidak muncul di Riwayat Citra" — layar
+ * ini tidak pernah membaca Firestore sama sekali).
  *
  * [selectedImageId] (bukan destination NavHost terpisah) yang mengontrol tampil/sembunyinya
  * [ImageAnalysisDetailRoute] sebagai `ModalBottomSheet` DI ATAS grid ini pada composable yang
@@ -19,10 +30,9 @@ import com.teti2026.smartgreenhouse.ui.navigation.Routes
  * NavHost terpisah — pendekatan awal yang menyebabkan window Dialog kosong bertumpuk, karena
  * `ModalBottomSheet` M3 sudah membuat `Dialog`-nya sendiri).
  *
- * TODO (MOB-T09/T10): [sampleCropImageHistoryItems] statis — ganti dengan hasil
- * FirestoreRepository.getCropImages(plotId) via ImageHistoryViewModel begitu dikerjakan.
- * Filter "Sehat"/"Sakit"/"Minggu Ini" sudah difungsikan di client (data sampel kecil), nanti
- * bisa dipindah jadi query Firestore langsung bila data besar.
+ * TODO: filter "Minggu Ini" idealnya menyaring berdasarkan timestamp asli 7 hari terakhir —
+ * [CropImageHistoryItem] cuma punya [CropImageHistoryItem.timestampLabel] (String tampilan, sudah
+ * diformat), bukan epoch — untuk sekarang tetap tampilkan semua (sama seperti perilaku sebelumnya).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,44 +40,50 @@ fun ImageHistoryRoute(
     onCreateListingFromImage: (ImageAnalysisDetail) -> Unit,
     onCreateListingClick: () -> Unit,
     onBackClick: () -> Unit,
-    onBottomNavigate: (String) -> Unit
+    onBottomNavigate: (String) -> Unit,
+    viewModel: ImageHistoryViewModel = viewModel()
 ) {
     var selectedFilter by remember { mutableStateOf(ImageHistoryFilter.ALL) }
     var selectedImageId by remember { mutableStateOf<String?>(null) }
 
-    val filteredItems = when (selectedFilter) {
-        ImageHistoryFilter.ALL -> sampleCropImageHistoryItems
-        ImageHistoryFilter.HEALTHY -> sampleCropImageHistoryItems.filter {
-            it.category == ImageHealthCategory.GOOD
-        }
-        ImageHistoryFilter.SICK -> sampleCropImageHistoryItems.filter {
-            it.category == ImageHealthCategory.SICK
-        }
-        // TODO: "Minggu Ini" idealnya menyaring berdasarkan timestamp asli 7 hari terakhir —
-        // data sampel belum punya Instant/Long, jadi untuk sekarang tampilkan semua.
-        ImageHistoryFilter.THIS_WEEK -> sampleCropImageHistoryItems
-    }
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
-    ImageHistoryScreen(
-        items = filteredItems,
-        selectedFilter = selectedFilter,
-        onFilterSelected = { selectedFilter = it },
-        onItemClick = { imageId -> selectedImageId = imageId },
-        onCreateListingClick = onCreateListingClick,
-        onBackClick = onBackClick,
-        currentBottomNavRoute = Routes.FARMER_IMAGE_HISTORY,
-        onBottomNavigate = onBottomNavigate
-    )
-
-    val detail = selectedImageId?.let { sampleImageAnalysisDetails[it] }
-    if (detail != null) {
-        ImageAnalysisDetailRoute(
-            detail = detail,
-            onCreateListingClick = { selected ->
-                selectedImageId = null
-                onCreateListingFromImage(selected)
-            },
-            onCloseClick = { selectedImageId = null }
+    when (val s = state) {
+        is ImageHistoryUiState.Loading -> ProfileLoadingIndicator()
+        is ImageHistoryUiState.Error -> ProfileErrorView(
+            messageResId = s.messageResId,
+            onRetryClick = viewModel::load
         )
+        is ImageHistoryUiState.Success -> {
+            val filteredItems = when (selectedFilter) {
+                ImageHistoryFilter.ALL -> s.items
+                ImageHistoryFilter.HEALTHY -> s.items.filter { it.category == ImageHealthCategory.GOOD }
+                ImageHistoryFilter.SICK -> s.items.filter { it.category == ImageHealthCategory.SICK }
+                ImageHistoryFilter.THIS_WEEK -> s.items
+            }
+
+            ImageHistoryScreen(
+                items = filteredItems,
+                selectedFilter = selectedFilter,
+                onFilterSelected = { selectedFilter = it },
+                onItemClick = { imageId -> selectedImageId = imageId },
+                onCreateListingClick = onCreateListingClick,
+                onBackClick = onBackClick,
+                currentBottomNavRoute = Routes.FARMER_IMAGE_HISTORY,
+                onBottomNavigate = onBottomNavigate
+            )
+
+            val detail = selectedImageId?.let { s.details[it] }
+            if (detail != null) {
+                ImageAnalysisDetailRoute(
+                    detail = detail,
+                    onCreateListingClick = { selected ->
+                        selectedImageId = null
+                        onCreateListingFromImage(selected)
+                    },
+                    onCloseClick = { selectedImageId = null }
+                )
+            }
+        }
     }
 }
